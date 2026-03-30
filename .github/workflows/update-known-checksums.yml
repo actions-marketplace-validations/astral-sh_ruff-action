@@ -11,20 +11,21 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
-          node-version: "20"
+          node-version-file: .nvmrc
+          cache: npm
       - name: Update known checksums
         id: update-known-checksums
         run:
-          node dist/update-known-checksums/index.js
+          node dist/update-known-checksums/index.cjs
           src/download/checksum/known-checksums.ts ${{ secrets.GITHUB_TOKEN }}
       - run: npm ci --ignore-scripts && npm run all
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@98357b18bf14b5342f975ff684046ec3b2a07725 # v8.0.0
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8.1.0
         with:
           commit-message: "chore: update known checksums"
           title:

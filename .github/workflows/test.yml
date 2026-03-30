@@ -15,22 +15,27 @@ permissions: {}
 jobs:
   lint:
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write # for zizmor
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Actionlint
         uses: eifinger/actionlint-action@447fbfe7533062b7a9ea55f790f2396fba6d052a  # v1.10.0
-      - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@71321a20a9ded102f6e9ce5718a2fcec2c4f70d8 # v0.5.2
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
         with:
-          node-version: "20"
+          node-version-file: .nvmrc
+          cache: npm
       - run: |
           npm ci --ignore-scripts
       - run: |
           npm run all
       - name: Check all jobs are in all-tests-passed.needs
         run: |
-          tsc check-all-tests-passed-needs.ts
+          tsc -p tsconfig.json
           node check-all-tests-passed-needs.js
         working-directory: .github/scripts
       - name: Make sure no changes from linters are detected
@@ -42,7 +47,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, macos-14, windows-latest]
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use latest version
@@ -57,7 +62,7 @@ jobs:
         ruff-version: ["0.1.7", "0.1.8", "0.4.7", "0.4.10", "0.7", "0.7.x", ">=0.7.0"]
         os: [ ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-14, windows-latest ]
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use version ${{ matrix.ruff-version }}
@@ -68,7 +73,7 @@ jobs:
   test-unsupported-version:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Try install old version
@@ -88,7 +93,7 @@ jobs:
   test-version-from-version-file-pyproject:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use version from pyproject.toml
@@ -107,7 +112,7 @@ jobs:
   test-default-version-from-pyproject:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use default version from pyproject.toml
@@ -125,7 +130,7 @@ jobs:
   test-default-version-from-pyproject-dev-group:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use default version from pyproject.toml dev group
@@ -144,7 +149,7 @@ jobs:
   test-default-version-from-pyproject-dependency-groups:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use default version from pyproject.toml dependency groups
@@ -163,7 +168,7 @@ jobs:
   test-default-version-from-pyproject-dependency-groups-with-env-marker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use default version from pyproject.toml with environment marker
@@ -183,7 +188,7 @@ jobs:
   test-default-version-from-pyproject-poetry-groups:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use default version from pyproject.toml poetry group dependencies
@@ -202,7 +207,7 @@ jobs:
   test-default-version-from-pyproject-poetry:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use default version from pyproject.toml poetry dependencies
@@ -221,7 +226,7 @@ jobs:
   test-default-version-from-pyproject-optional-dependencies:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use default version from pyproject.toml optional dependencies
@@ -240,7 +245,7 @@ jobs:
   test-default-version-from-requirements:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use default version from requirements.txt
@@ -259,7 +264,7 @@ jobs:
   test-default-version-from-requirements-with-hash:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use default version from requirements-with-hash.txt
@@ -278,7 +283,7 @@ jobs:
   test-semver-range:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use version 0.7
@@ -297,7 +302,7 @@ jobs:
   test-pep440-version-specifier:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Install version 0.9.10
@@ -323,7 +328,7 @@ jobs:
           - os: macos-latest
             checksum: "af9583bff12afbca5d5670334e0187dd60c4d91bc71317d1b2dde70cb1200ba9"
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Checksum matches expected
@@ -335,7 +340,7 @@ jobs:
   test-with-explicit-token:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use default version
@@ -349,7 +354,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use args
@@ -360,7 +365,7 @@ jobs:
   test-failure:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Format should fail
@@ -396,7 +401,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest, windows-latest ]
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
       - name: Use args
@@ -406,6 +411,25 @@ jobs:
           src: >-
             __tests__/fixtures/python-project/src/python_project/__init__.py
             __tests__/fixtures/python-project/src/python_project/hello_world.py
+  test-parent-directory-pyproject:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Use version from parent directory pyproject.toml
+        id: ruff-action
+        uses: ./
+        with:
+          src: __tests__/fixtures/parent-config-project/subproject
+      - name: Correct version gets installed
+        run: |
+          if [ "$RUFF_VERSION" != "0.10.0" ]; then
+            echo "Expected version 0.10.0 but got $RUFF_VERSION"
+            exit 1
+          fi
+        env:
+          RUFF_VERSION: ${{ steps.ruff-action.outputs.ruff-version }}
 
   all-tests-passed:
     runs-on: ubuntu-latest
@@ -431,6 +455,7 @@ jobs:
       - test-args
       - test-failure
       - test-multiple-src
+      - test-parent-directory-pyproject
     if: always()
     steps:
       - name: All tests passed
