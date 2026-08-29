@@ -2428,7 +2428,7 @@ var require_connect = __commonJS({
     var util2 = require_util();
     var { InvalidArgumentError, ConnectTimeoutError } = require_errors();
     var timers = require_timers();
-    function noop2() {
+    function noop3() {
     }
     var tls;
     var SessionCache;
@@ -2553,7 +2553,7 @@ var require_connect = __commonJS({
     }
     var setupConnectTimeout = process.platform === "win32" ? (socketWeakRef, opts) => {
       if (!opts.timeout) {
-        return noop2;
+        return noop3;
       }
       let s1 = null;
       let s2 = null;
@@ -2569,7 +2569,7 @@ var require_connect = __commonJS({
       };
     } : (socketWeakRef, opts) => {
       if (!opts.timeout) {
-        return noop2;
+        return noop3;
       }
       let s1 = null;
       const fastTimer = timers.setFastTimeout(() => {
@@ -5360,7 +5360,7 @@ var require_body = __commonJS({
       random = (max) => Math.floor(Math.random(max));
     }
     var textEncoder = new TextEncoder();
-    function noop2() {
+    function noop3() {
     }
     var hasFinalizationRegistry = globalThis.FinalizationRegistry && process.version.indexOf("v18") !== 0;
     var streamRegistry;
@@ -5368,7 +5368,7 @@ var require_body = __commonJS({
       streamRegistry = new FinalizationRegistry((weakRef) => {
         const stream2 = weakRef.deref();
         if (stream2 && !stream2.locked && !isDisturbed(stream2) && !isErrored(stream2)) {
-          stream2.cancel("Response object has been garbage collected").catch(noop2);
+          stream2.cancel("Response object has been garbage collected").catch(noop3);
         }
       });
     }
@@ -7447,7 +7447,7 @@ var require_client = __commonJS({
     var connectH2 = require_client_h2();
     var deprecatedInterceptorWarned = false;
     var kClosedResolve = /* @__PURE__ */ Symbol("kClosedResolve");
-    var noop2 = () => {
+    var noop3 = () => {
     };
     function getPipelining(client) {
       return client[kPipelining] ?? client[kHTTPContext]?.defaultPipelining ?? 1;
@@ -7737,14 +7737,14 @@ var require_client = __commonJS({
           });
         });
         if (client.destroyed) {
-          util2.destroy(socket.on("error", noop2), new ClientDestroyedError());
+          util2.destroy(socket.on("error", noop3), new ClientDestroyedError());
           return;
         }
         assert(socket);
         try {
           client[kHTTPContext] = socket.alpnProtocol === "h2" ? await connectH2(client, socket) : await connectH1(client, socket);
         } catch (err) {
-          socket.destroy().on("error", noop2);
+          socket.destroy().on("error", noop3);
           throw err;
         }
         client[kConnecting] = false;
@@ -8485,7 +8485,7 @@ var require_proxy_agent = __commonJS({
     function defaultFactory(origin, opts) {
       return new Pool(origin, opts);
     }
-    var noop2 = () => {
+    var noop3 = () => {
     };
     function defaultAgentFactory(origin, opts) {
       if (opts.connections === 1) {
@@ -8602,7 +8602,7 @@ var require_proxy_agent = __commonJS({
                 servername: this[kProxyTls]?.servername || proxyHostname
               });
               if (statusCode !== 200) {
-                socket.on("error", noop2).destroy();
+                socket.on("error", noop3).destroy();
                 callback(new RequestAbortedError(`Proxy response (${statusCode}) !== 200 when HTTP Tunneling`));
               }
               if (opts2.protocol !== "https:") {
@@ -9167,7 +9167,7 @@ var require_readable = __commonJS({
     var kAbort = /* @__PURE__ */ Symbol("kAbort");
     var kContentType = /* @__PURE__ */ Symbol("kContentType");
     var kContentLength = /* @__PURE__ */ Symbol("kContentLength");
-    var noop2 = () => {
+    var noop3 = () => {
     };
     var BodyReadable = class extends Readable {
       constructor({
@@ -9299,7 +9299,7 @@ var require_readable = __commonJS({
             } else {
               resolve(null);
             }
-          }).on("error", noop2).on("data", function(chunk) {
+          }).on("error", noop3).on("data", function(chunk) {
             limit -= chunk.length;
             if (limit <= 0) {
               this.destroy();
@@ -18583,99 +18583,134 @@ var require_undici = __commonJS({
   }
 });
 
-// node_modules/fast-content-type-parse/index.js
-var require_fast_content_type_parse = __commonJS({
-  "node_modules/fast-content-type-parse/index.js"(exports2, module2) {
+// node_modules/content-type/dist/index.js
+var require_dist = __commonJS({
+  "node_modules/content-type/dist/index.js"(exports2) {
     "use strict";
-    var NullObject = function NullObject2() {
-    };
-    NullObject.prototype = /* @__PURE__ */ Object.create(null);
-    var paramRE = /; *([!#$%&'*+.^\w`|~-]+)=("(?:[\v\u0020\u0021\u0023-\u005b\u005d-\u007e\u0080-\u00ff]|\\[\v\u0020-\u00ff])*"|[!#$%&'*+.^\w`|~-]+) */gu;
-    var quotedPairRE = /\\([\v\u0020-\u00ff])/gu;
-    var mediaTypeRE = /^[!#$%&'*+.^\w|~-]+\/[!#$%&'*+.^\w|~-]+$/u;
-    var defaultContentType = { type: "", parameters: new NullObject() };
-    Object.freeze(defaultContentType.parameters);
-    Object.freeze(defaultContentType);
-    function parse2(header) {
-      if (typeof header !== "string") {
-        throw new TypeError("argument header is required and must be a string");
-      }
-      let index = header.indexOf(";");
-      const type = index !== -1 ? header.slice(0, index).trim() : header.trim();
-      if (mediaTypeRE.test(type) === false) {
-        throw new TypeError("invalid media type");
-      }
-      const result = {
-        type: type.toLowerCase(),
-        parameters: new NullObject()
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.format = format;
+    exports2.parse = parse3;
+    var TEXT_REGEXP = /^[\u0009\u0020-\u007e\u0080-\u00ff]*$/;
+    var TOKEN_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+    var QUOTE_REGEXP = /[\\"]/g;
+    var TYPE_REGEXP = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+\/[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
+    var NullObject = /* @__PURE__ */ (() => {
+      const C = function() {
       };
-      if (index === -1) {
-        return result;
+      C.prototype = /* @__PURE__ */ Object.create(null);
+      return C;
+    })();
+    function format(obj) {
+      const { type, parameters } = obj;
+      if (!type || !TYPE_REGEXP.test(type)) {
+        throw new TypeError(`Invalid type: ${type}`);
       }
-      let key;
-      let match;
-      let value;
-      paramRE.lastIndex = index;
-      while (match = paramRE.exec(header)) {
-        if (match.index !== index) {
-          throw new TypeError("invalid parameter format");
+      let result = type;
+      if (parameters) {
+        for (const param of Object.keys(parameters)) {
+          if (!TOKEN_REGEXP.test(param)) {
+            throw new TypeError(`Invalid parameter name: ${param}`);
+          }
+          result += `; ${param}=${qstring(parameters[param])}`;
         }
-        index += match[0].length;
-        key = match[1].toLowerCase();
-        value = match[2];
-        if (value[0] === '"') {
-          value = value.slice(1, value.length - 1);
-          quotedPairRE.test(value) && (value = value.replace(quotedPairRE, "$1"));
-        }
-        result.parameters[key] = value;
-      }
-      if (index !== header.length) {
-        throw new TypeError("invalid parameter format");
       }
       return result;
     }
-    function safeParse2(header) {
-      if (typeof header !== "string") {
-        return defaultContentType;
-      }
-      let index = header.indexOf(";");
-      const type = index !== -1 ? header.slice(0, index).trim() : header.trim();
-      if (mediaTypeRE.test(type) === false) {
-        return defaultContentType;
-      }
-      const result = {
-        type: type.toLowerCase(),
-        parameters: new NullObject()
-      };
-      if (index === -1) {
-        return result;
-      }
-      let key;
-      let match;
-      let value;
-      paramRE.lastIndex = index;
-      while (match = paramRE.exec(header)) {
-        if (match.index !== index) {
-          return defaultContentType;
-        }
-        index += match[0].length;
-        key = match[1].toLowerCase();
-        value = match[2];
-        if (value[0] === '"') {
-          value = value.slice(1, value.length - 1);
-          quotedPairRE.test(value) && (value = value.replace(quotedPairRE, "$1"));
-        }
-        result.parameters[key] = value;
-      }
-      if (index !== header.length) {
-        return defaultContentType;
-      }
-      return result;
+    function parse3(header, options) {
+      const len = header.length;
+      let index = skipOWS(header, 0, len);
+      const valueStart = index;
+      index = skipValue(header, index, len);
+      const valueEnd = trailingOWS(header, valueStart, index);
+      const type = header.slice(valueStart, valueEnd).toLowerCase();
+      const parameters = options?.parameters === false ? new NullObject() : parseParameters(header, index, len);
+      return { type, parameters };
     }
-    module2.exports.default = { parse: parse2, safeParse: safeParse2 };
-    module2.exports.parse = parse2;
-    module2.exports.safeParse = safeParse2;
-    module2.exports.defaultContentType = defaultContentType;
+    var SP = 32;
+    var HTAB = 9;
+    var SEMI = 59;
+    var EQ = 61;
+    var DQUOTE = 34;
+    var BSLASH = 92;
+    function parseParameters(header, index, len) {
+      const parameters = new NullObject();
+      parameter: while (index < len) {
+        index = skipOWS(header, index + 1, len);
+        const keyStart = index;
+        while (index < len) {
+          const code = header.charCodeAt(index);
+          if (code === SEMI)
+            continue parameter;
+          if (code === EQ) {
+            const keyEnd = trailingOWS(header, keyStart, index);
+            const key = header.slice(keyStart, keyEnd).toLowerCase();
+            index = skipOWS(header, index + 1, len);
+            if (index < len && header.charCodeAt(index) === DQUOTE) {
+              index++;
+              let value = "";
+              while (index < len) {
+                const code2 = header.charCodeAt(index++);
+                if (code2 === DQUOTE) {
+                  index = skipValue(header, index, len);
+                  if (parameters[key] === void 0)
+                    parameters[key] = value;
+                  break;
+                }
+                if (code2 === BSLASH && index < len) {
+                  value += header[index++];
+                  continue;
+                }
+                value += String.fromCharCode(code2);
+              }
+              continue parameter;
+            }
+            const valueStart = index;
+            index = skipValue(header, index, len);
+            if (parameters[key] === void 0) {
+              const valueEnd = trailingOWS(header, valueStart, index);
+              parameters[key] = header.slice(valueStart, valueEnd);
+            }
+            continue parameter;
+          }
+          index++;
+        }
+      }
+      return parameters;
+    }
+    function skipValue(str, index, len) {
+      while (index < len) {
+        const char = str.charCodeAt(index);
+        if (char === SEMI)
+          break;
+        index++;
+      }
+      return index;
+    }
+    function skipOWS(header, index, len) {
+      while (index < len) {
+        const char = header.charCodeAt(index);
+        if (char !== SP && char !== HTAB)
+          break;
+        index++;
+      }
+      return index;
+    }
+    function trailingOWS(header, start, end) {
+      while (end > start) {
+        const char = header.charCodeAt(end - 1);
+        if (char !== SP && char !== HTAB)
+          break;
+        end--;
+      }
+      return end;
+    }
+    function qstring(str) {
+      if (TOKEN_REGEXP.test(str))
+        return str;
+      if (TEXT_REGEXP.test(str))
+        return `"${str.replace(QUOTE_REGEXP, "\\$&")}"`;
+      throw new TypeError(`Invalid parameter value: ${str}`);
+    }
   }
 });
 
@@ -18816,8 +18851,8 @@ var require_semver = __commonJS({
       }
     }
     var i;
-    exports2.parse = parse2;
-    function parse2(version, options) {
+    exports2.parse = parse3;
+    function parse3(version, options) {
       if (!options || typeof options !== "object") {
         options = {
           loose: !!options,
@@ -18845,12 +18880,12 @@ var require_semver = __commonJS({
     }
     exports2.valid = valid2;
     function valid2(version, options) {
-      var v = parse2(version, options);
+      var v = parse3(version, options);
       return v ? v.version : null;
     }
     exports2.clean = clean2;
     function clean2(version, options) {
-      var s = parse2(version.trim().replace(/^[=v]+/, ""), options);
+      var s = parse3(version.trim().replace(/^[=v]+/, ""), options);
       return s ? s.version : null;
     }
     exports2.SemVer = SemVer;
@@ -19086,8 +19121,8 @@ var require_semver = __commonJS({
       if (eq(version1, version2)) {
         return null;
       } else {
-        var v1 = parse2(version1);
-        var v2 = parse2(version2);
+        var v1 = parse3(version1);
+        var v2 = parse3(version2);
         var prefix = "";
         if (v1.prerelease.length || v2.prerelease.length) {
           prefix = "pre";
@@ -19793,7 +19828,7 @@ var require_semver = __commonJS({
     }
     exports2.prerelease = prerelease;
     function prerelease(version, options) {
-      var parsed = parse2(version, options);
+      var parsed = parse3(version, options);
       return parsed && parsed.prerelease.length ? parsed.prerelease : null;
     }
     exports2.intersects = intersects;
@@ -19830,7 +19865,7 @@ var require_semver = __commonJS({
       if (match === null) {
         return null;
       }
-      return parse2(match[2] + "." + (match[3] || "0") + "." + (match[4] || "0"), options);
+      return parse3(match[2] + "." + (match[3] || "0") + "." + (match[4] || "0"), options);
     }
   }
 });
@@ -20293,7 +20328,7 @@ var require_parse2 = __commonJS({
   "node_modules/@actions/tool-cache/node_modules/semver/functions/parse.js"(exports2, module2) {
     "use strict";
     var SemVer = require_semver2();
-    var parse2 = (version, options, throwErrors = false) => {
+    var parse3 = (version, options, throwErrors = false) => {
       if (version instanceof SemVer) {
         return version;
       }
@@ -20306,7 +20341,7 @@ var require_parse2 = __commonJS({
         throw er;
       }
     };
-    module2.exports = parse2;
+    module2.exports = parse3;
   }
 });
 
@@ -20314,9 +20349,9 @@ var require_parse2 = __commonJS({
 var require_valid = __commonJS({
   "node_modules/@actions/tool-cache/node_modules/semver/functions/valid.js"(exports2, module2) {
     "use strict";
-    var parse2 = require_parse2();
+    var parse3 = require_parse2();
     var valid2 = (version, options) => {
-      const v = parse2(version, options);
+      const v = parse3(version, options);
       return v ? v.version : null;
     };
     module2.exports = valid2;
@@ -20327,9 +20362,9 @@ var require_valid = __commonJS({
 var require_clean = __commonJS({
   "node_modules/@actions/tool-cache/node_modules/semver/functions/clean.js"(exports2, module2) {
     "use strict";
-    var parse2 = require_parse2();
+    var parse3 = require_parse2();
     var clean2 = (version, options) => {
-      const s = parse2(version.trim().replace(/^[=v]+/, ""), options);
+      const s = parse3(version.trim().replace(/^[=v]+/, ""), options);
       return s ? s.version : null;
     };
     module2.exports = clean2;
@@ -20364,10 +20399,10 @@ var require_inc = __commonJS({
 var require_diff = __commonJS({
   "node_modules/@actions/tool-cache/node_modules/semver/functions/diff.js"(exports2, module2) {
     "use strict";
-    var parse2 = require_parse2();
+    var parse3 = require_parse2();
     var diff = (version1, version2) => {
-      const v1 = parse2(version1, null, true);
-      const v2 = parse2(version2, null, true);
+      const v1 = parse3(version1, null, true);
+      const v2 = parse3(version2, null, true);
       const comparison = v1.compare(v2);
       if (comparison === 0) {
         return null;
@@ -20438,9 +20473,9 @@ var require_patch = __commonJS({
 var require_prerelease = __commonJS({
   "node_modules/@actions/tool-cache/node_modules/semver/functions/prerelease.js"(exports2, module2) {
     "use strict";
-    var parse2 = require_parse2();
+    var parse3 = require_parse2();
     var prerelease = (version, options) => {
-      const parsed = parse2(version, options);
+      const parsed = parse3(version, options);
       return parsed && parsed.prerelease.length ? parsed.prerelease : null;
     };
     module2.exports = prerelease;
@@ -20626,7 +20661,7 @@ var require_coerce = __commonJS({
   "node_modules/@actions/tool-cache/node_modules/semver/functions/coerce.js"(exports2, module2) {
     "use strict";
     var SemVer = require_semver2();
-    var parse2 = require_parse2();
+    var parse3 = require_parse2();
     var { safeRe: re, t } = require_re();
     var coerce = (version, options) => {
       if (version instanceof SemVer) {
@@ -20661,7 +20696,7 @@ var require_coerce = __commonJS({
       const patch = match[4] || "0";
       const prerelease = options.includePrerelease && match[5] ? `-${match[5]}` : "";
       const build = options.includePrerelease && match[6] ? `+${match[6]}` : "";
-      return parse2(`${major}.${minor}.${patch}${prerelease}${build}`, options);
+      return parse3(`${major}.${minor}.${patch}${prerelease}${build}`, options);
     };
     module2.exports = coerce;
   }
@@ -21678,7 +21713,7 @@ var require_semver3 = __commonJS({
     var constants3 = require_constants6();
     var SemVer = require_semver2();
     var identifiers = require_identifiers();
-    var parse2 = require_parse2();
+    var parse3 = require_parse2();
     var valid2 = require_valid();
     var clean2 = require_clean();
     var inc = require_inc();
@@ -21716,7 +21751,7 @@ var require_semver3 = __commonJS({
     var simplifyRange = require_simplify();
     var subset = require_subset();
     module2.exports = {
-      parse: parse2,
+      parse: parse3,
       valid: valid2,
       clean: clean2,
       inc,
@@ -23192,7 +23227,7 @@ function isKeyOperator(operator) {
 function getValues(context, operator, key, modifier) {
   var value = context[key], result = [];
   if (isDefined(value) && value !== "") {
-    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
       value = value.toString();
       if (modifier && modifier !== "*") {
         value = value.substring(0, parseInt(modifier, 10));
@@ -23371,7 +23406,110 @@ function withDefaults(oldDefaults, newDefaults) {
 var endpoint = withDefaults(null, DEFAULTS);
 
 // node_modules/@octokit/request/dist-bundle/index.js
-var import_fast_content_type_parse = __toESM(require_fast_content_type_parse(), 1);
+var import_content_type = __toESM(require_dist(), 1);
+
+// node_modules/json-with-bigint/json-with-bigint.js
+var intRegex = /^-?\d+$/;
+var noiseValue = /^-?\d+n+$/;
+var originalStringify = JSON.stringify;
+var originalParse = JSON.parse;
+var customFormat = /^-?\d+n$/;
+var bigIntsStringify = /([\[:])?"(-?\d+)n"($|([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
+var noiseStringify = /([\[:])?("-?\d+n+)n("$|"([\\n]|\s)*(\s|[\\n])*[,\}\]])/g;
+var JSONStringify = (value, replacer, space) => {
+  if ("rawJSON" in JSON) {
+    return originalStringify(
+      value,
+      (key, value2) => {
+        if (typeof value2 === "bigint") return JSON.rawJSON(value2.toString());
+        if (typeof replacer === "function") return replacer(key, value2);
+        if (Array.isArray(replacer) && replacer.includes(key)) return value2;
+        return value2;
+      },
+      space
+    );
+  }
+  if (!value) return originalStringify(value, replacer, space);
+  const convertedToCustomJSON = originalStringify(
+    value,
+    (key, value2) => {
+      const isNoise = typeof value2 === "string" && noiseValue.test(value2);
+      if (isNoise) return value2.toString() + "n";
+      if (typeof value2 === "bigint") return value2.toString() + "n";
+      if (typeof replacer === "function") return replacer(key, value2);
+      if (Array.isArray(replacer) && replacer.includes(key)) return value2;
+      return value2;
+    },
+    space
+  );
+  const processedJSON = convertedToCustomJSON.replace(
+    bigIntsStringify,
+    "$1$2$3"
+  );
+  const denoisedJSON = processedJSON.replace(noiseStringify, "$1$2$3");
+  return denoisedJSON;
+};
+var featureCache = /* @__PURE__ */ new Map();
+var isContextSourceSupported = () => {
+  const parseFingerprint = JSON.parse.toString();
+  if (featureCache.has(parseFingerprint)) {
+    return featureCache.get(parseFingerprint);
+  }
+  try {
+    const result = JSON.parse(
+      "1",
+      (_, __, context) => !!context?.source && context.source === "1"
+    );
+    featureCache.set(parseFingerprint, result);
+    return result;
+  } catch {
+    featureCache.set(parseFingerprint, false);
+    return false;
+  }
+};
+var convertMarkedBigIntsReviver = (key, value, context, userReviver) => {
+  const isCustomFormatBigInt = typeof value === "string" && customFormat.test(value);
+  if (isCustomFormatBigInt) return BigInt(value.slice(0, -1));
+  const isNoiseValue = typeof value === "string" && noiseValue.test(value);
+  if (isNoiseValue) return value.slice(0, -1);
+  if (typeof userReviver !== "function") return value;
+  return userReviver(key, value, context);
+};
+var JSONParseV2 = (text, reviver) => {
+  return JSON.parse(text, (key, value, context) => {
+    const isBigNumber = typeof value === "number" && (value > Number.MAX_SAFE_INTEGER || value < Number.MIN_SAFE_INTEGER);
+    const isInt = context && intRegex.test(context.source);
+    const isBigInt = isBigNumber && isInt;
+    if (isBigInt) return BigInt(context.source);
+    if (typeof reviver !== "function") return value;
+    return reviver(key, value, context);
+  });
+};
+var MAX_INT = Number.MAX_SAFE_INTEGER.toString();
+var MAX_DIGITS = MAX_INT.length;
+var stringsOrLargeNumbers = /"(?:\\.|[^"])*"|-?(0|[1-9][0-9]*)(\.[0-9]+)?([eE][+-]?[0-9]+)?/g;
+var noiseValueWithQuotes = /^"-?\d+n+"$/;
+var JSONParse = (text, reviver) => {
+  if (!text) return originalParse(text, reviver);
+  if (isContextSourceSupported()) return JSONParseV2(text, reviver);
+  const serializedData = text.replace(
+    stringsOrLargeNumbers,
+    (text2, digits, fractional, exponential) => {
+      const isString = text2[0] === '"';
+      const isNoise = isString && noiseValueWithQuotes.test(text2);
+      if (isNoise) return text2.substring(0, text2.length - 1) + 'n"';
+      const isFractionalOrExponential = fractional || exponential;
+      const isLessThanMaxSafeInt = digits && (digits.length < MAX_DIGITS || digits.length === MAX_DIGITS && digits <= MAX_INT);
+      if (isString || isFractionalOrExponential || isLessThanMaxSafeInt)
+        return text2;
+      return '"' + text2 + 'n"';
+    }
+  );
+  return originalParse(
+    serializedData,
+    (key, value, context) => convertMarkedBigIntsReviver(key, value, context, reviver)
+  );
+};
 
 // node_modules/@octokit/request-error/dist-src/index.js
 var RequestError = class extends Error {
@@ -23389,7 +23527,7 @@ var RequestError = class extends Error {
    */
   response;
   constructor(message, statusCode, options) {
-    super(message);
+    super(message, { cause: options.cause });
     this.name = "HttpError";
     this.status = Number.parseInt(statusCode);
     if (Number.isNaN(this.status)) {
@@ -23413,7 +23551,7 @@ var RequestError = class extends Error {
 };
 
 // node_modules/@octokit/request/dist-bundle/index.js
-var VERSION2 = "10.0.3";
+var VERSION2 = "10.0.11";
 var defaults_default = {
   headers: {
     "user-agent": `octokit-request.js/${VERSION2} ${getUserAgent()}`
@@ -23427,6 +23565,7 @@ function isPlainObject2(value) {
   const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
   return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
 }
+var noop = () => "";
 async function fetchWrapper(requestOptions) {
   const fetch = requestOptions.request?.fetch || globalThis.fetch;
   if (!fetch) {
@@ -23436,7 +23575,7 @@ async function fetchWrapper(requestOptions) {
   }
   const log = requestOptions.request?.log || console;
   const parseSuccessResponseBody = requestOptions.request?.parseSuccessResponseBody !== false;
-  const body = isPlainObject2(requestOptions.body) || Array.isArray(requestOptions.body) ? JSON.stringify(requestOptions.body) : requestOptions.body;
+  const body = isPlainObject2(requestOptions.body) || Array.isArray(requestOptions.body) ? JSONStringify(requestOptions.body) : requestOptions.body;
   const requestHeaders = Object.fromEntries(
     Object.entries(requestOptions.headers).map(([name, value]) => [
       name,
@@ -23528,21 +23667,24 @@ async function fetchWrapper(requestOptions) {
 async function getResponseData(response) {
   const contentType = response.headers.get("content-type");
   if (!contentType) {
-    return response.text().catch(() => "");
+    return response.text().catch(noop);
   }
-  const mimetype = (0, import_fast_content_type_parse.safeParse)(contentType);
+  const mimetype = (0, import_content_type.parse)(contentType);
   if (isJSONResponse(mimetype)) {
     let text = "";
     try {
       text = await response.text();
-      return JSON.parse(text);
+      return JSONParse(text);
     } catch (err) {
       return text;
     }
   } else if (mimetype.type.startsWith("text/") || mimetype.parameters.charset?.toLowerCase() === "utf-8") {
-    return response.text().catch(() => "");
+    return response.text().catch(noop);
   } else {
-    return response.arrayBuffer().catch(() => new ArrayBuffer(0));
+    return response.arrayBuffer().catch(
+      /* v8 ignore next -- @preserve */
+      () => new ArrayBuffer(0)
+    );
   }
 }
 function isJSONResponse(mimetype) {
@@ -23555,9 +23697,10 @@ function toErrorMessage(data) {
   if (data instanceof ArrayBuffer) {
     return "Unknown error";
   }
-  if ("message" in data) {
-    const suffix = "documentation_url" in data ? ` - ${data.documentation_url}` : "";
-    return Array.isArray(data.errors) ? `${data.message}: ${data.errors.map((v) => JSON.stringify(v)).join(", ")}${suffix}` : `${data.message}${suffix}`;
+  if (typeof data === "object" && data !== null && "message" in data) {
+    const objectData = data;
+    const suffix = "documentation_url" in objectData ? ` - ${objectData.documentation_url}` : "";
+    return Array.isArray(objectData.errors) ? `${objectData.message}: ${objectData.errors.map((v) => JSON.stringify(v)).join(", ")}${suffix}` : `${objectData.message}${suffix}`;
   }
   return `Unknown error: ${JSON.stringify(data)}`;
 }
@@ -23739,19 +23882,19 @@ var createTokenAuth = function createTokenAuth2(token) {
 };
 
 // node_modules/@octokit/core/dist-src/version.js
-var VERSION4 = "7.0.3";
+var VERSION4 = "7.0.6";
 
 // node_modules/@octokit/core/dist-src/index.js
-var noop = () => {
+var noop2 = () => {
 };
 var consoleWarn = console.warn.bind(console);
 var consoleError = console.error.bind(console);
 function createLogger(logger = {}) {
   if (typeof logger.debug !== "function") {
-    logger.debug = noop;
+    logger.debug = noop2;
   }
   if (typeof logger.info !== "function") {
-    logger.info = noop;
+    logger.info = noop2;
   }
   if (typeof logger.warn !== "function") {
     logger.warn = consoleWarn;
@@ -23992,7 +24135,7 @@ function paginateRest(octokit) {
 paginateRest.VERSION = VERSION5;
 
 // node_modules/@octokit/plugin-rest-endpoint-methods/dist-src/version.js
-var VERSION6 = "16.0.0";
+var VERSION6 = "17.0.0";
 
 // node_modules/@octokit/plugin-rest-endpoint-methods/dist-src/generated/endpoints.js
 var Endpoints = {
@@ -24052,6 +24195,12 @@ var Endpoints = {
     ],
     deleteArtifact: [
       "DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"
+    ],
+    deleteCustomImageFromOrg: [
+      "DELETE /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}"
+    ],
+    deleteCustomImageVersionFromOrg: [
+      "DELETE /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}/versions/{version}"
     ],
     deleteEnvironmentSecret: [
       "DELETE /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
@@ -24126,6 +24275,12 @@ var Endpoints = {
       "GET /repos/{owner}/{repo}/actions/permissions/selected-actions"
     ],
     getArtifact: ["GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"],
+    getCustomImageForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}"
+    ],
+    getCustomImageVersionForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}/versions/{version}"
+    ],
     getCustomOidcSubClaimForRepo: [
       "GET /repos/{owner}/{repo}/actions/oidc/customization/sub"
     ],
@@ -24205,6 +24360,12 @@ var Endpoints = {
       "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/timing"
     ],
     listArtifactsForRepo: ["GET /repos/{owner}/{repo}/actions/artifacts"],
+    listCustomImageVersionsForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/images/custom/{image_definition_id}/versions"
+    ],
+    listCustomImagesForOrg: [
+      "GET /orgs/{org}/actions/hosted-runners/images/custom"
+    ],
     listEnvironmentSecrets: [
       "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets"
     ],
@@ -24462,6 +24623,12 @@ var Endpoints = {
     getGithubActionsBillingOrg: ["GET /orgs/{org}/settings/billing/actions"],
     getGithubActionsBillingUser: [
       "GET /users/{username}/settings/billing/actions"
+    ],
+    getGithubBillingPremiumRequestUsageReportOrg: [
+      "GET /organizations/{org}/settings/billing/premium_request/usage"
+    ],
+    getGithubBillingPremiumRequestUsageReportUser: [
+      "GET /users/{username}/settings/billing/premium_request/usage"
     ],
     getGithubBillingUsageReportOrg: [
       "GET /organizations/{org}/settings/billing/usage"
@@ -24804,11 +24971,20 @@ var Endpoints = {
     removeSelectedRepoFromOrgSecret: [
       "DELETE /orgs/{org}/dependabot/secrets/{secret_name}/repositories/{repository_id}"
     ],
+    repositoryAccessForOrg: [
+      "GET /organizations/{org}/dependabot/repository-access"
+    ],
+    setRepositoryAccessDefaultLevel: [
+      "PUT /organizations/{org}/dependabot/repository-access/default-level"
+    ],
     setSelectedReposForOrgSecret: [
       "PUT /orgs/{org}/dependabot/secrets/{secret_name}/repositories"
     ],
     updateAlert: [
       "PATCH /repos/{owner}/{repo}/dependabot/alerts/{alert_number}"
+    ],
+    updateRepositoryAccessForOrg: [
+      "PATCH /organizations/{org}/dependabot/repository-access"
     ]
   },
   dependencyGraph: {
@@ -24821,6 +24997,51 @@ var Endpoints = {
     exportSbom: ["GET /repos/{owner}/{repo}/dependency-graph/sbom"]
   },
   emojis: { get: ["GET /emojis"] },
+  enterpriseTeamMemberships: {
+    add: [
+      "PUT /enterprises/{enterprise}/teams/{enterprise-team}/memberships/{username}"
+    ],
+    bulkAdd: [
+      "POST /enterprises/{enterprise}/teams/{enterprise-team}/memberships/add"
+    ],
+    bulkRemove: [
+      "POST /enterprises/{enterprise}/teams/{enterprise-team}/memberships/remove"
+    ],
+    get: [
+      "GET /enterprises/{enterprise}/teams/{enterprise-team}/memberships/{username}"
+    ],
+    list: ["GET /enterprises/{enterprise}/teams/{enterprise-team}/memberships"],
+    remove: [
+      "DELETE /enterprises/{enterprise}/teams/{enterprise-team}/memberships/{username}"
+    ]
+  },
+  enterpriseTeamOrganizations: {
+    add: [
+      "PUT /enterprises/{enterprise}/teams/{enterprise-team}/organizations/{org}"
+    ],
+    bulkAdd: [
+      "POST /enterprises/{enterprise}/teams/{enterprise-team}/organizations/add"
+    ],
+    bulkRemove: [
+      "POST /enterprises/{enterprise}/teams/{enterprise-team}/organizations/remove"
+    ],
+    delete: [
+      "DELETE /enterprises/{enterprise}/teams/{enterprise-team}/organizations/{org}"
+    ],
+    getAssignment: [
+      "GET /enterprises/{enterprise}/teams/{enterprise-team}/organizations/{org}"
+    ],
+    getAssignments: [
+      "GET /enterprises/{enterprise}/teams/{enterprise-team}/organizations"
+    ]
+  },
+  enterpriseTeams: {
+    create: ["POST /enterprises/{enterprise}/teams"],
+    delete: ["DELETE /enterprises/{enterprise}/teams/{team_slug}"],
+    get: ["GET /enterprises/{enterprise}/teams/{team_slug}"],
+    list: ["GET /enterprises/{enterprise}/teams"],
+    update: ["PATCH /enterprises/{enterprise}/teams/{team_slug}"]
+  },
   gists: {
     checkIsStarred: ["GET /gists/{gist_id}/star"],
     create: ["POST /gists"],
@@ -24914,6 +25135,9 @@ var Endpoints = {
     addAssignees: [
       "POST /repos/{owner}/{repo}/issues/{issue_number}/assignees"
     ],
+    addBlockedByDependency: [
+      "POST /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by"
+    ],
     addLabels: ["POST /repos/{owner}/{repo}/issues/{issue_number}/labels"],
     addSubIssue: [
       "POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues"
@@ -24940,10 +25164,17 @@ var Endpoints = {
     getEvent: ["GET /repos/{owner}/{repo}/issues/events/{event_id}"],
     getLabel: ["GET /repos/{owner}/{repo}/labels/{name}"],
     getMilestone: ["GET /repos/{owner}/{repo}/milestones/{milestone_number}"],
+    getParent: ["GET /repos/{owner}/{repo}/issues/{issue_number}/parent"],
     list: ["GET /issues"],
     listAssignees: ["GET /repos/{owner}/{repo}/assignees"],
     listComments: ["GET /repos/{owner}/{repo}/issues/{issue_number}/comments"],
     listCommentsForRepo: ["GET /repos/{owner}/{repo}/issues/comments"],
+    listDependenciesBlockedBy: [
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by"
+    ],
+    listDependenciesBlocking: [
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocking"
+    ],
     listEvents: ["GET /repos/{owner}/{repo}/issues/{issue_number}/events"],
     listEventsForRepo: ["GET /repos/{owner}/{repo}/issues/events"],
     listEventsForTimeline: [
@@ -24969,6 +25200,9 @@ var Endpoints = {
     ],
     removeAssignees: [
       "DELETE /repos/{owner}/{repo}/issues/{issue_number}/assignees"
+    ],
+    removeDependencyBlockedBy: [
+      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocked_by/{issue_id}"
     ],
     removeLabel: [
       "DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}"
@@ -25072,30 +25306,61 @@ var Endpoints = {
     convertMemberToOutsideCollaborator: [
       "PUT /orgs/{org}/outside_collaborators/{username}"
     ],
+    createArtifactStorageRecord: [
+      "POST /orgs/{org}/artifacts/metadata/storage-record"
+    ],
     createInvitation: ["POST /orgs/{org}/invitations"],
     createIssueType: ["POST /orgs/{org}/issue-types"],
-    createOrUpdateCustomProperties: ["PATCH /orgs/{org}/properties/schema"],
-    createOrUpdateCustomPropertiesValuesForRepos: [
-      "PATCH /orgs/{org}/properties/values"
+    createWebhook: ["POST /orgs/{org}/hooks"],
+    customPropertiesForOrgsCreateOrUpdateOrganizationValues: [
+      "PATCH /organizations/{org}/org-properties/values"
     ],
-    createOrUpdateCustomProperty: [
+    customPropertiesForOrgsGetOrganizationValues: [
+      "GET /organizations/{org}/org-properties/values"
+    ],
+    customPropertiesForReposCreateOrUpdateOrganizationDefinition: [
       "PUT /orgs/{org}/properties/schema/{custom_property_name}"
     ],
-    createWebhook: ["POST /orgs/{org}/hooks"],
+    customPropertiesForReposCreateOrUpdateOrganizationDefinitions: [
+      "PATCH /orgs/{org}/properties/schema"
+    ],
+    customPropertiesForReposCreateOrUpdateOrganizationValues: [
+      "PATCH /orgs/{org}/properties/values"
+    ],
+    customPropertiesForReposDeleteOrganizationDefinition: [
+      "DELETE /orgs/{org}/properties/schema/{custom_property_name}"
+    ],
+    customPropertiesForReposGetOrganizationDefinition: [
+      "GET /orgs/{org}/properties/schema/{custom_property_name}"
+    ],
+    customPropertiesForReposGetOrganizationDefinitions: [
+      "GET /orgs/{org}/properties/schema"
+    ],
+    customPropertiesForReposGetOrganizationValues: [
+      "GET /orgs/{org}/properties/values"
+    ],
     delete: ["DELETE /orgs/{org}"],
+    deleteAttestationsBulk: ["POST /orgs/{org}/attestations/delete-request"],
+    deleteAttestationsById: [
+      "DELETE /orgs/{org}/attestations/{attestation_id}"
+    ],
+    deleteAttestationsBySubjectDigest: [
+      "DELETE /orgs/{org}/attestations/digest/{subject_digest}"
+    ],
     deleteIssueType: ["DELETE /orgs/{org}/issue-types/{issue_type_id}"],
     deleteWebhook: ["DELETE /orgs/{org}/hooks/{hook_id}"],
-    enableOrDisableSecurityProductOnAllOrgRepos: [
-      "POST /orgs/{org}/{security_product}/{enablement}",
-      {},
-      {
-        deprecated: "octokit.rest.orgs.enableOrDisableSecurityProductOnAllOrgRepos() is deprecated, see https://docs.github.com/rest/orgs/orgs#enable-or-disable-a-security-feature-for-an-organization"
-      }
+    disableSelectedRepositoryImmutableReleasesOrganization: [
+      "DELETE /orgs/{org}/settings/immutable-releases/repositories/{repository_id}"
+    ],
+    enableSelectedRepositoryImmutableReleasesOrganization: [
+      "PUT /orgs/{org}/settings/immutable-releases/repositories/{repository_id}"
     ],
     get: ["GET /orgs/{org}"],
-    getAllCustomProperties: ["GET /orgs/{org}/properties/schema"],
-    getCustomProperty: [
-      "GET /orgs/{org}/properties/schema/{custom_property_name}"
+    getImmutableReleasesSettings: [
+      "GET /orgs/{org}/settings/immutable-releases"
+    ],
+    getImmutableReleasesSettingsRepositories: [
+      "GET /orgs/{org}/settings/immutable-releases/repositories"
     ],
     getMembershipForAuthenticatedUser: ["GET /user/memberships/orgs/{org}"],
     getMembershipForUser: ["GET /orgs/{org}/memberships/{username}"],
@@ -25111,9 +25376,15 @@ var Endpoints = {
     ],
     list: ["GET /organizations"],
     listAppInstallations: ["GET /orgs/{org}/installations"],
+    listArtifactStorageRecords: [
+      "GET /orgs/{org}/artifacts/{subject_digest}/metadata/storage-records"
+    ],
+    listAttestationRepositories: ["GET /orgs/{org}/attestations/repositories"],
     listAttestations: ["GET /orgs/{org}/attestations/{subject_digest}"],
+    listAttestationsBulk: [
+      "POST /orgs/{org}/attestations/bulk-list{?per_page,before,after}"
+    ],
     listBlockedUsers: ["GET /orgs/{org}/blocks"],
-    listCustomPropertiesValuesForRepos: ["GET /orgs/{org}/properties/values"],
     listFailedInvitations: ["GET /orgs/{org}/failed_invitations"],
     listForAuthenticatedUser: ["GET /user/orgs"],
     listForUser: ["GET /users/{username}/orgs"],
@@ -25151,9 +25422,6 @@ var Endpoints = {
     redeliverWebhookDelivery: [
       "POST /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}/attempts"
     ],
-    removeCustomProperty: [
-      "DELETE /orgs/{org}/properties/schema/{custom_property_name}"
-    ],
     removeMember: ["DELETE /orgs/{org}/members/{username}"],
     removeMembershipForUser: ["DELETE /orgs/{org}/memberships/{username}"],
     removeOutsideCollaborator: [
@@ -25186,6 +25454,12 @@ var Endpoints = {
     ],
     revokeOrgRoleUser: [
       "DELETE /orgs/{org}/organization-roles/users/{username}/{role_id}"
+    ],
+    setImmutableReleasesSettings: [
+      "PUT /orgs/{org}/settings/immutable-releases"
+    ],
+    setImmutableReleasesSettingsRepositories: [
+      "PUT /orgs/{org}/settings/immutable-releases/repositories"
     ],
     setMembershipForUser: ["PUT /orgs/{org}/memberships/{username}"],
     setPublicMembershipForAuthenticatedUser: [
@@ -25304,6 +25578,46 @@ var Endpoints = {
     listOrgPrivateRegistries: ["GET /orgs/{org}/private-registries"],
     updateOrgPrivateRegistry: [
       "PATCH /orgs/{org}/private-registries/{secret_name}"
+    ]
+  },
+  projects: {
+    addItemForOrg: ["POST /orgs/{org}/projectsV2/{project_number}/items"],
+    addItemForUser: [
+      "POST /users/{username}/projectsV2/{project_number}/items"
+    ],
+    deleteItemForOrg: [
+      "DELETE /orgs/{org}/projectsV2/{project_number}/items/{item_id}"
+    ],
+    deleteItemForUser: [
+      "DELETE /users/{username}/projectsV2/{project_number}/items/{item_id}"
+    ],
+    getFieldForOrg: [
+      "GET /orgs/{org}/projectsV2/{project_number}/fields/{field_id}"
+    ],
+    getFieldForUser: [
+      "GET /users/{username}/projectsV2/{project_number}/fields/{field_id}"
+    ],
+    getForOrg: ["GET /orgs/{org}/projectsV2/{project_number}"],
+    getForUser: ["GET /users/{username}/projectsV2/{project_number}"],
+    getOrgItem: ["GET /orgs/{org}/projectsV2/{project_number}/items/{item_id}"],
+    getUserItem: [
+      "GET /users/{username}/projectsV2/{project_number}/items/{item_id}"
+    ],
+    listFieldsForOrg: ["GET /orgs/{org}/projectsV2/{project_number}/fields"],
+    listFieldsForUser: [
+      "GET /users/{username}/projectsV2/{project_number}/fields"
+    ],
+    listForOrg: ["GET /orgs/{org}/projectsV2"],
+    listForUser: ["GET /users/{username}/projectsV2"],
+    listItemsForOrg: ["GET /orgs/{org}/projectsV2/{project_number}/items"],
+    listItemsForUser: [
+      "GET /users/{username}/projectsV2/{project_number}/items"
+    ],
+    updateItemForOrg: [
+      "PATCH /orgs/{org}/projectsV2/{project_number}/items/{item_id}"
+    ],
+    updateItemForUser: [
+      "PATCH /users/{username}/projectsV2/{project_number}/items/{item_id}"
     ]
   },
   pulls: {
@@ -25466,6 +25780,7 @@ var Endpoints = {
       "GET /repos/{owner}/{repo}/automated-security-fixes"
     ],
     checkCollaborator: ["GET /repos/{owner}/{repo}/collaborators/{username}"],
+    checkImmutableReleases: ["GET /repos/{owner}/{repo}/immutable-releases"],
     checkPrivateVulnerabilityReporting: [
       "GET /repos/{owner}/{repo}/private-vulnerability-reporting"
     ],
@@ -25501,9 +25816,6 @@ var Endpoints = {
     createForAuthenticatedUser: ["POST /user/repos"],
     createFork: ["POST /repos/{owner}/{repo}/forks"],
     createInOrg: ["POST /orgs/{org}/repos"],
-    createOrUpdateCustomPropertiesValues: [
-      "PATCH /repos/{owner}/{repo}/properties/values"
-    ],
     createOrUpdateEnvironment: [
       "PUT /repos/{owner}/{repo}/environments/{environment_name}"
     ],
@@ -25517,6 +25829,12 @@ var Endpoints = {
       "POST /repos/{template_owner}/{template_repo}/generate"
     ],
     createWebhook: ["POST /repos/{owner}/{repo}/hooks"],
+    customPropertiesForReposCreateOrUpdateRepositoryValues: [
+      "PATCH /repos/{owner}/{repo}/properties/values"
+    ],
+    customPropertiesForReposGetRepositoryValues: [
+      "GET /repos/{owner}/{repo}/properties/values"
+    ],
     declineInvitation: [
       "DELETE /user/repository_invitations/{invitation_id}",
       {},
@@ -25571,6 +25889,9 @@ var Endpoints = {
     disableDeploymentProtectionRule: [
       "DELETE /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}"
     ],
+    disableImmutableReleases: [
+      "DELETE /repos/{owner}/{repo}/immutable-releases"
+    ],
     disablePrivateVulnerabilityReporting: [
       "DELETE /repos/{owner}/{repo}/private-vulnerability-reporting"
     ],
@@ -25587,6 +25908,7 @@ var Endpoints = {
     enableAutomatedSecurityFixes: [
       "PUT /repos/{owner}/{repo}/automated-security-fixes"
     ],
+    enableImmutableReleases: ["PUT /repos/{owner}/{repo}/immutable-releases"],
     enablePrivateVulnerabilityReporting: [
       "PUT /repos/{owner}/{repo}/private-vulnerability-reporting"
     ],
@@ -25638,7 +25960,6 @@ var Endpoints = {
     getCustomDeploymentProtectionRule: [
       "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}"
     ],
-    getCustomPropertiesValues: ["GET /repos/{owner}/{repo}/properties/values"],
     getDeployKey: ["GET /repos/{owner}/{repo}/keys/{key_id}"],
     getDeployment: ["GET /repos/{owner}/{repo}/deployments/{deployment_id}"],
     getDeploymentBranchPolicy: [
@@ -25856,13 +26177,7 @@ var Endpoints = {
   search: {
     code: ["GET /search/code"],
     commits: ["GET /search/commits"],
-    issuesAndPullRequests: [
-      "GET /search/issues",
-      {},
-      {
-        deprecated: "octokit.rest.search.issuesAndPullRequests() is deprecated, see https://docs.github.com/rest/search/search#search-issues-and-pull-requests"
-      }
-    ],
+    issuesAndPullRequests: ["GET /search/issues"],
     labels: ["GET /search/labels"],
     repos: ["GET /search/repositories"],
     topics: ["GET /search/topics"],
@@ -25876,16 +26191,19 @@ var Endpoints = {
       "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"
     ],
     getScanHistory: ["GET /repos/{owner}/{repo}/secret-scanning/scan-history"],
-    listAlertsForEnterprise: [
-      "GET /enterprises/{enterprise}/secret-scanning/alerts"
-    ],
     listAlertsForOrg: ["GET /orgs/{org}/secret-scanning/alerts"],
     listAlertsForRepo: ["GET /repos/{owner}/{repo}/secret-scanning/alerts"],
     listLocationsForAlert: [
       "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}/locations"
     ],
+    listOrgPatternConfigs: [
+      "GET /orgs/{org}/secret-scanning/pattern-configurations"
+    ],
     updateAlert: [
       "PATCH /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"
+    ],
+    updateOrgPatternConfigs: [
+      "PATCH /orgs/{org}/secret-scanning/pattern-configurations"
     ]
   },
   securityAdvisories: {
@@ -25995,6 +26313,15 @@ var Endpoints = {
     ],
     createPublicSshKeyForAuthenticatedUser: ["POST /user/keys"],
     createSshSigningKeyForAuthenticatedUser: ["POST /user/ssh_signing_keys"],
+    deleteAttestationsBulk: [
+      "POST /users/{username}/attestations/delete-request"
+    ],
+    deleteAttestationsById: [
+      "DELETE /users/{username}/attestations/{attestation_id}"
+    ],
+    deleteAttestationsBySubjectDigest: [
+      "DELETE /users/{username}/attestations/digest/{subject_digest}"
+    ],
     deleteEmailForAuthenticated: [
       "DELETE /user/emails",
       {},
@@ -26039,6 +26366,9 @@ var Endpoints = {
     ],
     list: ["GET /users"],
     listAttestations: ["GET /users/{username}/attestations/{subject_digest}"],
+    listAttestationsBulk: [
+      "POST /users/{username}/attestations/bulk-list{?per_page,before,after}"
+    ],
     listBlockedByAuthenticated: [
       "GET /user/blocks",
       {},
@@ -26441,8 +26771,348 @@ function _getGlobal(key, defaultValue) {
   return value !== void 0 ? value : defaultValue;
 }
 
-// src/download/checksum/known-checksums.ts
-var KNOWN_CHECKSUMS = {
+// src/download/checksum/known-checksums.json
+var known_checksums_default = {
+  "aarch64-apple-darwin-0.16.5": "ed142f8656e0092828c103dd058b55b871c88e13a801cade8f860d8a9ca8943e",
+  "aarch64-pc-windows-msvc-0.16.5": "30874e50be1f31626022358bbcaa80112ce1065b9297e5a9c4654f0b5a230d39",
+  "aarch64-unknown-linux-gnu-0.16.5": "796079ea998dba3e455394077ba51a4c500c2402d3920580c646a0580f20370c",
+  "aarch64-unknown-linux-musl-0.16.5": "ae88ae21344546a4b3e5d342360197ea8e79d3794d673cc807c6f302d8b87f03",
+  "arm-unknown-linux-musleabihf-0.16.5": "8cff03acf4816cc1391f4304b982ce10a0de37c8623c095668523c0037d3d19e",
+  "armv7-unknown-linux-gnueabihf-0.16.5": "dabf33e2dd3dee40badb154b40886b7b23eb9f6e53c04a6a117c1c26e5401b05",
+  "armv7-unknown-linux-musleabihf-0.16.5": "bf7f3761c1086f5b7816aedf099b6260170fcce3fe52e97dbd88389df0a48de3",
+  "i686-pc-windows-msvc-0.16.5": "20057031df4f11751908cf87931364328e57ae403f69032b49aebfa9b0b60743",
+  "i686-unknown-linux-gnu-0.16.5": "19b55dabbb7a314ec1e8cba5ccc45a676e2fed58893fede19f00e6362f8c5ac7",
+  "i686-unknown-linux-musl-0.16.5": "d5e653a5eb0a4982e0a01be5f48cc3dcb1cb49b50e62655bf02be3aeee7214e8",
+  "powerpc64le-unknown-linux-gnu-0.16.5": "cdd9272c353053604a38986c971f69a9f24b0c8e2e6c9abea1d1a4d7944dd866",
+  "riscv64gc-unknown-linux-gnu-0.16.5": "1c520a72e12837288e71e8e6b76f8ea507a18f7af8743378155d1e34a126ae3f",
+  "s390x-unknown-linux-gnu-0.16.5": "a3391e391c53d412bb1479bb1770cc33123084be4137d57d9677436fc0a4bc93",
+  "x86_64-apple-darwin-0.16.5": "4895245fe294cd9f38b8c941b9aa009b3015729f73327bdbf8a716b7fec8f84d",
+  "x86_64-pc-windows-msvc-0.16.5": "02fe2fc6d04eb4e768c34daaca4990b327ea83e84b0eac58affb924c0f554a75",
+  "x86_64-unknown-linux-gnu-0.16.5": "65b8bae7e43f12a91b71036a52176012b3aefb725d5ae263e2771474110a0983",
+  "x86_64-unknown-linux-musl-0.16.5": "0c560ee4a72245c6d0c9cdfd9dd69cbdc348b9448349707cf4061cea62472059",
+  "aarch64-apple-darwin-0.16.4": "b4ad832b7734592aa1c6710dbc15277ed9d3d54c8bd44bb25bb7b14ae9098b88",
+  "aarch64-pc-windows-msvc-0.16.4": "da426ce57cffb8399aec0efcdca54a7bd775877d43ed4cdc8bbe0db1ba612b27",
+  "aarch64-unknown-linux-gnu-0.16.4": "08eb65c07016f1b6d2a874777492a230c7d5822bdf34030af217825b57911b0a",
+  "aarch64-unknown-linux-musl-0.16.4": "2b828176fed3fa23361accb749e305f804bb050395a05ed96c769a8fd4c8e440",
+  "arm-unknown-linux-musleabihf-0.16.4": "04029c5ac9448504e7d15b3f37c02ec91e4aa1721b5f646544468a05b8d7db29",
+  "armv7-unknown-linux-gnueabihf-0.16.4": "16d2a99ce3f5e459e16fd7af9cc5800ea97312fe582368dde22f375b6745db23",
+  "armv7-unknown-linux-musleabihf-0.16.4": "babfdf9ee445ef4490ce8c838ead79bf74ec0ed6010b18aa99fdb68bbbd5ae33",
+  "i686-pc-windows-msvc-0.16.4": "3a153f833c729ea4e67379c91637d9ac02917c4d9edf866b22fabbf84b89ae93",
+  "i686-unknown-linux-gnu-0.16.4": "fa2d20225c6eed473bab358323510fd6fc8604d6b98798bb774da019d3490b2c",
+  "i686-unknown-linux-musl-0.16.4": "2ad466eeaa1078a2fe5e9efaf395c62bc57dcbe938cbc58eb1db53bad23bb3ce",
+  "powerpc64le-unknown-linux-gnu-0.16.4": "ae42d24a22851893848341a9244d467ebd50fbcf88d3cf2b2f7900d3c8a5487f",
+  "riscv64gc-unknown-linux-gnu-0.16.4": "e2becfd12ae19fb77da6dbbd7ce437d3701b0ca687ac0d46da1a5bbc0ceedb9f",
+  "s390x-unknown-linux-gnu-0.16.4": "d3899941e592b7ecb50d0a4389412ede324eecb9437955327ef8237213c13293",
+  "x86_64-apple-darwin-0.16.4": "233b7368e00b25064abd0db19f7cb1b43117fef41d7106170e6ffec50a0201ca",
+  "x86_64-pc-windows-msvc-0.16.4": "5e3a9521e568fd925d554abd606f40bb51e59327c28db716eb3faf2c5b6ce123",
+  "x86_64-unknown-linux-gnu-0.16.4": "9cb1234804ddb0f7f57cef3f81623ce5acb990e40af7cce08dc7778c9d7ee96c",
+  "x86_64-unknown-linux-musl-0.16.4": "0c2a1616b0782dbf7ee04239576887c4c894277189e04ba94ff3160eba9c1863",
+  "aarch64-apple-darwin-0.16.3": "136a4db6512d9b16dda56ac8604696ed65c3b1a914a142de029e7f8d5006f1d9",
+  "aarch64-pc-windows-msvc-0.16.3": "9a9915c54b27b26c972271fbd603845610bb379a7f29571daf923fd8d2bda33e",
+  "aarch64-unknown-linux-gnu-0.16.3": "b9cc833f5db856484b38718c9da195a6ec990707307bda30530913a09705419a",
+  "aarch64-unknown-linux-musl-0.16.3": "8319ba22f655e6efc086103486d7165bf0de73f71ff1c5f25ba580153ad05feb",
+  "arm-unknown-linux-musleabihf-0.16.3": "6e5f0997db41d8dfb1ba92b33394c4a34a389ba1e3cbe6942256549dae96ae82",
+  "armv7-unknown-linux-gnueabihf-0.16.3": "76be35fd77c1f1d7b715b060ca36a9112b98a7d89e8b9f997d9e31db7d2be482",
+  "armv7-unknown-linux-musleabihf-0.16.3": "a3ffeb309e3f3311f6d2a5f88dbbf5ae00f463eaadd436b51542ce1c4c650274",
+  "i686-pc-windows-msvc-0.16.3": "1a44ce38a2f156c8164a69224f3cb84ab60c8421513dbf1c3b027e2319bc30f3",
+  "i686-unknown-linux-gnu-0.16.3": "776355f3a6f630a9455b2db42f0efc68a81f657b51121208eabf94927710033b",
+  "i686-unknown-linux-musl-0.16.3": "9b3ed97c1da852c8fda9b4811bbb83a06e7aa30dd0d831e2f7633a159b036abb",
+  "powerpc64le-unknown-linux-gnu-0.16.3": "40238e0943bfead38b0f3f81c6ccc2cb95794cdd7c8fd9839e76345b84f256b3",
+  "riscv64gc-unknown-linux-gnu-0.16.3": "52dd197c1e069a016612d0b04ed889659f47d422e9f7ce390801ecf54a2116b4",
+  "s390x-unknown-linux-gnu-0.16.3": "3d9251e56355c0ceb0b6bff0d97ae89663f4fab105ac187a27f66a3f871785af",
+  "x86_64-apple-darwin-0.16.3": "05c2a6705e7c0c056d6d93ff538978583f0c47b4c28d334ab9d58d2e8daf4c24",
+  "x86_64-pc-windows-msvc-0.16.3": "f10c709755b393fd9821506b21070bcca969b9966504edd1e490efd08e3662ba",
+  "x86_64-unknown-linux-gnu-0.16.3": "7ab3b978d2c0b1c96b2323d4e5c4f35284ae1cdf35d2f7399595c74c805f5fa3",
+  "x86_64-unknown-linux-musl-0.16.3": "d67c9b5949981698c48915abf65e0b3406ba9184ad73521cdf20a926bc889c73",
+  "aarch64-apple-darwin-0.16.2": "fbf6cbc23d254b0bc03a6fb2b1b04efb917fe5ce068d027e735ce7ed65b9bed6",
+  "aarch64-pc-windows-msvc-0.16.2": "c709bbb65f5e9a730aa341842836f3c5fd619c305fd0ae8509846edca39e73b0",
+  "aarch64-unknown-linux-gnu-0.16.2": "b2a2a2573455cc33af98f8a8fb49294c02d4e2e4a7f9e81844411f0a57f30318",
+  "aarch64-unknown-linux-musl-0.16.2": "7cc696f9d89cfeef02167301feedfc3017061fe45df3688b4f3589cde90a1139",
+  "arm-unknown-linux-musleabihf-0.16.2": "40a8e0a6ecd18f28ce70e21a3cff3b443751fefdae83a9e513f266719a90ef29",
+  "armv7-unknown-linux-gnueabihf-0.16.2": "60bf903522af7431b1c1a5bb1fe25c03e3dee12a78b391fec035d4894297e663",
+  "armv7-unknown-linux-musleabihf-0.16.2": "d9313724e9dc997882a0197ea2626827a78e5a10bfb7e29c8a40799d8cfeaa78",
+  "i686-pc-windows-msvc-0.16.2": "073c58e55b766840cb2c85ea7f8f004baf42e13ec45ecb5844a2e14a20af8562",
+  "i686-unknown-linux-gnu-0.16.2": "cd62ef53e5813f78d85574bdc22443a656b5b4fdef28ed4ba2feb39d968c4a8f",
+  "i686-unknown-linux-musl-0.16.2": "96407ab71947f066b1f03baa945970c629a5549170fc76728e6061a611b25a9f",
+  "powerpc64le-unknown-linux-gnu-0.16.2": "6120a85aaf2f12ddee7ee8ede283d09cb2eddd27e8dd15064e01996b036cd810",
+  "riscv64gc-unknown-linux-gnu-0.16.2": "712d27cf911a72106536570dfb74ff72459a79f644134979b192a28d7c778de8",
+  "s390x-unknown-linux-gnu-0.16.2": "66b8b352840af19067b0ca8fc0bff2540674997a73a75df9feeb7c46c0637a78",
+  "x86_64-apple-darwin-0.16.2": "6648fa7a7c95b087c5b9d269d8b9a567fae091bdef3993f77cc7531a01bd7266",
+  "x86_64-pc-windows-msvc-0.16.2": "84d2c6761bef8a299156bd24559aa1499024041b378dcb5e70ee85f7df12b1af",
+  "x86_64-unknown-linux-gnu-0.16.2": "3d2c355e641ceb5b608a158c603768fcc908c5009c56c6e78da7487da033b92a",
+  "x86_64-unknown-linux-musl-0.16.2": "df690c6a80a7c41b6f1154dd0b5dfc152a209cafa06ffd3d4ff30f9751f4965c",
+  "aarch64-apple-darwin-0.16.1": "a8df4e8e9f22e3b0ae0b9f165ddaafb7e34df692197a6c1a361e7426f90681d5",
+  "aarch64-pc-windows-msvc-0.16.1": "9d591931196e46338183b2b0307f126f2071b0543ed90ad3e8d8187278ba954b",
+  "aarch64-unknown-linux-gnu-0.16.1": "52b67c61ca7355a535dfab77f87a4a3ae3550191bead41c70aadded8b5dd33a4",
+  "aarch64-unknown-linux-musl-0.16.1": "5929d9f37fc518a3825f33a76ad8092c0555ca045ca1dbf5e680038a402c840c",
+  "arm-unknown-linux-musleabihf-0.16.1": "6159e52f130dde9332a21a73ce022fbf19331baf19c0b561834ef02821e2c39c",
+  "armv7-unknown-linux-gnueabihf-0.16.1": "78d06e22c0eb1ee88d87f7f22868a5261c6301c6c1a6a6a685bcd2a0c94e66a0",
+  "armv7-unknown-linux-musleabihf-0.16.1": "0b781ee2243716cab3e4523443fa0b73b90ee487ac6d61c7717bcacf39abf6e6",
+  "i686-pc-windows-msvc-0.16.1": "dd912980ccb50c13ff727014125927e4720ec6f6e0402ee6f5aeb44ab8df078a",
+  "i686-unknown-linux-gnu-0.16.1": "b78c5f4635d6037deea63e7c68152982e220f23e62eea09d81563fc082fd6ee1",
+  "i686-unknown-linux-musl-0.16.1": "4ab0197bfb5b42ac01c8a5725317f8a73592f0e95a057ae50ba1602c5bb18bda",
+  "powerpc64le-unknown-linux-gnu-0.16.1": "db72f14ff9a96b12064af6a5ae18cacfc19ce555e30b636fff3239d830b17829",
+  "riscv64gc-unknown-linux-gnu-0.16.1": "2b2a71b3af2b0d7147e5dacb883a3a308d74437929162e897b30deb10a503b44",
+  "s390x-unknown-linux-gnu-0.16.1": "dd9a0a1e6e88a38a1ef41f695c5dfd473e3c2e70721f44fd3cac50152c726875",
+  "x86_64-apple-darwin-0.16.1": "00396fb9db4cb04e07ad277e6b10d845e6767f0a2aae67e1a57aa65fa01334f0",
+  "x86_64-pc-windows-msvc-0.16.1": "f37898d133acba7df8cbd130abc3b58b98243d7f3ab751087193dde8887955c4",
+  "x86_64-unknown-linux-gnu-0.16.1": "7e1cc9b3da4911bb2c98c076302fd8997d822fac74dd8f1e30371701e70a4c56",
+  "x86_64-unknown-linux-musl-0.16.1": "23469683052cd2db1589f15032dd1751b2a3f212062e9fc901b0776d25fb36bc",
+  "aarch64-apple-darwin-0.16.0": "ce6564491a2cc4b0659f45ee174dbef17e4dec24e03a9c03d313b5430bc21099",
+  "aarch64-pc-windows-msvc-0.16.0": "5f7356bdd186a2af97e3dcd4422b481fd107ae0867cc04a2a8c150441ccd15b6",
+  "aarch64-unknown-linux-gnu-0.16.0": "879d4f0ca1a7f21a4afc6ef9345118b8a75aa2bc4aae9e41e0474994d0ef0a4f",
+  "aarch64-unknown-linux-musl-0.16.0": "7a6add3d38768dfa00c6d3853e9bd940b5526f3fbb76f02b1fe77ec0653f1e0e",
+  "arm-unknown-linux-musleabihf-0.16.0": "a3edf70c0c265bee17b9173d332643ce5bab9ee575938555c0b2e035d3b6b6bc",
+  "armv7-unknown-linux-gnueabihf-0.16.0": "6eb7ab8baf7ff9cb61e73c6c0615a637b15e8246652cd9c4d36182b5d912e641",
+  "armv7-unknown-linux-musleabihf-0.16.0": "c74b5763fc29b788b06349f78752c929501106614571d52ea11434678e162744",
+  "i686-pc-windows-msvc-0.16.0": "73bc7921afd23c28657a52f037760e2d12eb9aa285f56b94ce4034c100747b3a",
+  "i686-unknown-linux-gnu-0.16.0": "2c22c34005beed261b7de1bd1c58e1aee5f72c66491a53bde9a456a288eb8cd8",
+  "i686-unknown-linux-musl-0.16.0": "f2b38ddae2b54adf7b00237c190309f40368a64a69cb1e554a50643bb5b6703a",
+  "powerpc64le-unknown-linux-gnu-0.16.0": "55eb2e715fd4b89661bd99163c8422a2829f1d790bb388fa431f7c410864b7e9",
+  "riscv64gc-unknown-linux-gnu-0.16.0": "80eedc31c6f02c1ff9ea8828e7a99e7cae93bc67e8835d27c80590392d30089b",
+  "s390x-unknown-linux-gnu-0.16.0": "520abb2a2baf1e639dd582b590895f055bbb7aaa0d9c574a25239ed83ffb6381",
+  "x86_64-apple-darwin-0.16.0": "3d9ef6228c4eeb26d593c398b2dc5250e0f6d6425933db2993fcf30d49c78b69",
+  "x86_64-pc-windows-msvc-0.16.0": "c5d1185c47261f86361d03b547da25be79120226a6f1721d623b2aba9d27668b",
+  "x86_64-unknown-linux-gnu-0.16.0": "98001c995a134d95f9bc83106a7f94b552971b583f1c0ab75fb656a881e13865",
+  "x86_64-unknown-linux-musl-0.16.0": "2138b7bc58ff877f5bba09aea4cc984ad5699433b6a3f811003527b8cff8e9ad",
+  "aarch64-apple-darwin-0.15.22": "a2881af26fd1d19f4932c4ddf1e70b4e0efcf48513c5dae082564e03f0b467a3",
+  "aarch64-pc-windows-msvc-0.15.22": "76a57fe257602c386499437071a16abb1ee51fff68c8b4c28b0bf8a0d9f7aa34",
+  "aarch64-unknown-linux-gnu-0.15.22": "54ec426d839d7cea1096e9ea1c5486fd2f3df62ee6cfd71dc090b18f99bebd90",
+  "aarch64-unknown-linux-musl-0.15.22": "88feb2dc2fafb92482185201f4d483134fbaab10370c79512d3dd372f1d3f28b",
+  "arm-unknown-linux-musleabihf-0.15.22": "dfc790d7d1bb5c3ea2162ebfec45262e88c8f78903709ca54e15b1d21ac1c7b6",
+  "armv7-unknown-linux-gnueabihf-0.15.22": "b31c1f0e3b2c24372a58d09a45889fd350a02f4b7cbf39ce239b0f3fa6635479",
+  "armv7-unknown-linux-musleabihf-0.15.22": "c948d4cec399959773d6ac04fc92794d44dbf6a23d3a4e0411ef7d51afe7f494",
+  "i686-pc-windows-msvc-0.15.22": "a30a9a9aa89f582d12b14a10235de48a08656539fe1c5949ab915130718073b6",
+  "i686-unknown-linux-gnu-0.15.22": "e9af79223f3cdbd64dce693bd8ed1d52dec7408eb43c510f19e280b13679bf62",
+  "i686-unknown-linux-musl-0.15.22": "fbfc808162931f6bc30c641eaf6f568880fa230f915f3e7bd89912e6b275be65",
+  "powerpc64le-unknown-linux-gnu-0.15.22": "3760b7a4d2f5141ad4186c54545b77d93e7b05ecbcce8fd633b564ec215a8595",
+  "riscv64gc-unknown-linux-gnu-0.15.22": "b411cea3bec3c2d6c01ceb6425a613cc91e3b1b6542d1661902d224c343dc550",
+  "s390x-unknown-linux-gnu-0.15.22": "5493483cecb481eece55b2565d91395a24c51af62d43c380246fde1cb9d3b56a",
+  "x86_64-apple-darwin-0.15.22": "687a9ceb88ab85dab061026d5017218225a481121b1a40862cc8f92b56f18090",
+  "x86_64-pc-windows-msvc-0.15.22": "6e5419593984941405e9add902e89c6ea4af87d97919ac5ef82e1bc4e43bbd8d",
+  "x86_64-unknown-linux-gnu-0.15.22": "d535a4be6504146e757eff67b992f11a293a7a108be22e2a5898b32c32565996",
+  "x86_64-unknown-linux-musl-0.15.22": "853462df618fb9f156a9f04d9d899d9e5a9e1a43fbffaec72df4bb159348e71b",
+  "aarch64-apple-darwin-0.15.21": "0452f9d5da6e8051d332cf21ae82a608d8e2cfeec5a71a46ffa9e50adbb2381d",
+  "aarch64-pc-windows-msvc-0.15.21": "52f05487f1e9e5c4d20b06e3659104507f23ef184e5b194c600fba945226e196",
+  "aarch64-unknown-linux-gnu-0.15.21": "9846136be7fe5b70351d5bde22fd21d4b3ab55b07c9793fdf190040b296ee9a3",
+  "aarch64-unknown-linux-musl-0.15.21": "2ec7c0077431f96f74c3c72aea6505e902bc2ff47127653c8de1389ee30a3cb3",
+  "arm-unknown-linux-musleabihf-0.15.21": "7c7f7a917119513f6c98a27fd2539a6fc0443aec70866c07b46763f2ba4bb802",
+  "armv7-unknown-linux-gnueabihf-0.15.21": "e491d6b6fd77e6e878b55589b67db3ec5f2769908fb7db5e6c67ad468499da44",
+  "armv7-unknown-linux-musleabihf-0.15.21": "63816c926e66942ae9d3774be5cb07f895805a64afed915045d330c07523f270",
+  "i686-pc-windows-msvc-0.15.21": "a5bd8669602b50559cea879c391eca5a265a2759e77dec082cdab998660bf998",
+  "i686-unknown-linux-gnu-0.15.21": "5e9f9df0736c021a68315a1d4c2fe23e8f7035d78223004491ca3a780a1bb1bc",
+  "i686-unknown-linux-musl-0.15.21": "239062dd642ab4a3d3daea9d1f9a87296318b415cef3e6bc3c48c4a47127d8c8",
+  "powerpc64le-unknown-linux-gnu-0.15.21": "d450f2dbfdfe31ef63f433c9c62273fb5692f0f44d545569f9c66c7ceb2b19d1",
+  "riscv64gc-unknown-linux-gnu-0.15.21": "28067c07327533bdc9e94e1ff9e8446cd60f3bcd8c90dd6f302a0e5061870c05",
+  "s390x-unknown-linux-gnu-0.15.21": "5cd4bcc992155993ebda0363db0261f40b0119f1c781ad2e9502ba404df67bb5",
+  "x86_64-apple-darwin-0.15.21": "7e6ff3bd585b5b7c47634c957ac84fb5806d3c7ab4ef0e5ec1c53ce272f489da",
+  "x86_64-pc-windows-msvc-0.15.21": "035c59abfd7bd1102e0b656f5771e6ae7a712a45ef54b5ab575541c7ff7d1eb0",
+  "x86_64-unknown-linux-gnu-0.15.21": "7ddba1886f39ba918587f9ca37de9651008726834811c19ee83991705bd3e56b",
+  "x86_64-unknown-linux-musl-0.15.21": "7e157ff9a2e13676118c587e6db0ec02d040e415b21014346d230e64789c0e78",
+  "aarch64-apple-darwin-0.15.20": "cb41c48690c113dc08470e64103ce65ca15249c6ce3495d3ac792b329a83e8c1",
+  "aarch64-pc-windows-msvc-0.15.20": "6472417dfa49885bab36b92286cf933497bade1a30c816e6aa92e3adc684131b",
+  "aarch64-unknown-linux-gnu-0.15.20": "f915de3ab6d31a49f4c57b1f97129f359f9348c162ea03acfa07011ba79e1197",
+  "aarch64-unknown-linux-musl-0.15.20": "2e06ebae862dce74eb7b084081621f2d4183e18e60cb074e7906f862869fa1b6",
+  "arm-unknown-linux-musleabihf-0.15.20": "3fab24c45421c992c1a32da52473319969ad66069fa7b8ef96632e9f6edb48cc",
+  "armv7-unknown-linux-gnueabihf-0.15.20": "032288e4fc032c0c6e7d790bdc3272beac8e35870fc3153b94804e906b73b489",
+  "armv7-unknown-linux-musleabihf-0.15.20": "40a085563d348fb7ce3536ac5d422a3c8efd901218138397e02515f5498d993e",
+  "i686-pc-windows-msvc-0.15.20": "9f575c9b1d7c7304535ff6e271e15adb71e89c57381fbc14be91c741e70cabe7",
+  "i686-unknown-linux-gnu-0.15.20": "918f5e2f8d5cc8881388ae2f8b1faaebc6a6d93f325cc203e245782374ae74da",
+  "i686-unknown-linux-musl-0.15.20": "c06588ab67ed9b89bf8e9a7e8cfde5ed39afb2cc0050b89e4f05e8705be39ccd",
+  "powerpc64le-unknown-linux-gnu-0.15.20": "6005f0dbcf9526737e998b0e9643b45705a2a14196bcdf57522a1eb4c1e92606",
+  "riscv64gc-unknown-linux-gnu-0.15.20": "f050ed3b244aed95998865608e6c5c07ddc871a8cba7b4bd167212ba35d7b3a2",
+  "s390x-unknown-linux-gnu-0.15.20": "e10200d1436f39bba9b041d8f4ed86762ce799344f0af3cf625bd398713f4d5b",
+  "x86_64-apple-darwin-0.15.20": "36b91219b3aae00464e2a4fa361766abd47d0402ac88fbe6da5de44285738386",
+  "x86_64-pc-windows-msvc-0.15.20": "835fdea5b8d4e13d2cc49439006aa1fbe9b67a89371f03871fc7f70a0cf10516",
+  "x86_64-unknown-linux-gnu-0.15.20": "df8e74862d4cd4fdac11faf3048789896ff9898a0cacb98497df20d0a1cc7bb4",
+  "x86_64-unknown-linux-musl-0.15.20": "0715560b2402024b529a4ffd6ea7d3814a090eb255a6216259fb192823be3ad8",
+  "aarch64-apple-darwin-0.15.19": "c7253342f2ffbe2a0eaadaacd3424c3a24331b0307e57cc54031bc7ccd35d83a",
+  "aarch64-pc-windows-msvc-0.15.19": "66e3014fe7ae4424a0e7c48b524ab03e8e39a51012ba5acf656c3771fed24c0a",
+  "aarch64-unknown-linux-gnu-0.15.19": "b00f8c17424c0abea8f87ca52880b864d10ae8e5c5d09ee61730a80ee3874a97",
+  "aarch64-unknown-linux-musl-0.15.19": "d6945815c5b2b32d01483e1d59ac7d2e744df0a20272680b2290c3e5e4ce5020",
+  "arm-unknown-linux-musleabihf-0.15.19": "a533fbfe66f4ee6318d4c49b315c83b2dae9e474e1a66cb89148a12574654bd1",
+  "armv7-unknown-linux-gnueabihf-0.15.19": "3acea3a3808e724412d9abf898bd9228c6417bd9641168394a5db98c06669302",
+  "armv7-unknown-linux-musleabihf-0.15.19": "1fd42881a29964d884d822b4b3aacf5661aba43c95ce6b333defdab468ba57c5",
+  "i686-pc-windows-msvc-0.15.19": "6f89edb30cae3ba71176bdeb2a94d2ec6f2ddf3a647da61c45adf9b28efabd67",
+  "i686-unknown-linux-gnu-0.15.19": "82b0a2793f9bc1205f6ac2ecf8b2cfdd4fab450b7b63688d030c1276d477b0df",
+  "i686-unknown-linux-musl-0.15.19": "75876128126ceccd1374059b3aea2415c48aa735c8a0e3c16e2c48bff589f16b",
+  "powerpc64le-unknown-linux-gnu-0.15.19": "ce4548a179737c1e633cadd879124d762ebe6a850b6f6619467db2f822f42df1",
+  "riscv64gc-unknown-linux-gnu-0.15.19": "0032c5458e4515b1f3aea15cef4870d43a49bee55345994ee598e0e7ebed166d",
+  "s390x-unknown-linux-gnu-0.15.19": "86a9df0baa93b3e000283d0e019f52b7e684ae9a27cd07f3a985d159b8f1772a",
+  "x86_64-apple-darwin-0.15.19": "aaf50afd2a76be2674b8dd24b305e42a33a99269c2c43e334f6a940b29ca291c",
+  "x86_64-pc-windows-msvc-0.15.19": "e996f09c5aa5b00675318f0cdb59628633a202219d9c929736c5dcaaad2a6c4d",
+  "x86_64-unknown-linux-gnu-0.15.19": "0bfabff71f317e0e3b8c363043b888f045eff092073d5d9bd0ac7f8ede465711",
+  "x86_64-unknown-linux-musl-0.15.19": "682158b99b14ce60b62e7b4585100a11ebd5716355efe4048760690eda21fb99",
+  "aarch64-apple-darwin-0.15.18": "f0cc66c2df37f2a11c99a85b59b8fde21b37f61df062404a0afaed387b56dad0",
+  "aarch64-pc-windows-msvc-0.15.18": "344835d508df8bd5fd30a2941a7cee95b9b4f0f6342886b5d52b89571614c0d2",
+  "aarch64-unknown-linux-gnu-0.15.18": "c9636879455e940fc92edb95dd6e475d683da833987d1f0c147f39e521ae98a2",
+  "aarch64-unknown-linux-musl-0.15.18": "941eb7a7b8bc11f195a08393bb45def1656003031cff89af3805ca89cfd066b4",
+  "arm-unknown-linux-musleabihf-0.15.18": "e70e827e863e0c5efea70661c61fafc068ec630ecac529ac8921d6c83ba5bae2",
+  "armv7-unknown-linux-gnueabihf-0.15.18": "7cbdcb38059ad6c4cad1ea61e7411eb550510c8688a045aa4aee7aff3c743dc3",
+  "armv7-unknown-linux-musleabihf-0.15.18": "24e9f8ae7ca03639871299a9a55439593564ed6d6572dbc3649aa0d3bf35da19",
+  "i686-pc-windows-msvc-0.15.18": "d33ccad071478e3faa106506a53c0a62780abbb6d8c3c1ed29a36d4ec6a13168",
+  "i686-unknown-linux-gnu-0.15.18": "8ee90592d7b22bbb81c7ebbd08adcc7ba66154046e8539d793bfcb9b4e681dd1",
+  "i686-unknown-linux-musl-0.15.18": "9854c1fd59e876d229075f81dee88fb29f88bdc1aed9bca5e899810dd640db33",
+  "powerpc64le-unknown-linux-gnu-0.15.18": "6efa78ce85071f72f37f77fcdc51b39fd75efd795baaf1fe1d85a3d7cb1a2c1a",
+  "riscv64gc-unknown-linux-gnu-0.15.18": "d9b15d6fcd2931b0d88c8e56fd49f67ce7d1d362ad4b2623678849da5638f423",
+  "s390x-unknown-linux-gnu-0.15.18": "5699eba448816315ce7fb9489512f7823d5dc872d997641dbbc984c07a8a4799",
+  "x86_64-apple-darwin-0.15.18": "229d2c192718fde76794185ab9339515b75a55cc1337e4ca9d60309e2c506900",
+  "x86_64-pc-windows-msvc-0.15.18": "2c38db5fef5984c93db7bdc395c20c5c3470fafdd8deb72150db4d2da7870d07",
+  "x86_64-unknown-linux-gnu-0.15.18": "1ffb1d5e04e60347be17c514cbb19303d6d8c75f629060ed481a150337dbf060",
+  "x86_64-unknown-linux-musl-0.15.18": "9ca54aec52cfdbe1e708cc975e41e3e736a2c1ebe76668575efe09e0701465c8",
+  "aarch64-apple-darwin-0.15.17": "81f372886fb7a0056949356c615fa689a091cf79b0b54ed914c810cdbc6d85e9",
+  "aarch64-pc-windows-msvc-0.15.17": "827124e08fe4633e76a3186fb9e881485faf2057d8c12dd98924474d8b7d4493",
+  "aarch64-unknown-linux-gnu-0.15.17": "71593a6ca85cfede1743b9163aa4531a273f0eed6ae6c99d26ffe2af51bb5a3d",
+  "aarch64-unknown-linux-musl-0.15.17": "211d610dd81ef472d3b1404b28eaa19a62cb41ab9374584847307b97821a4ab8",
+  "arm-unknown-linux-musleabihf-0.15.17": "0ad5f2c15c85f334e846396c261dc18c850ed8288c8ca58fbf736783fb38ff48",
+  "armv7-unknown-linux-gnueabihf-0.15.17": "6a6abb8e81ee6e9fc1d389e39986698dcd2c97c98f983e6d0b1466791f9ebd64",
+  "armv7-unknown-linux-musleabihf-0.15.17": "97e60f2f92df99b4a80a12fe97316e2f403336515e7719d61d9fae6cca9c84fa",
+  "i686-pc-windows-msvc-0.15.17": "50b5ba7faa811d38993b3cde5d038480fa76c5af6b4183bfc28c9ad863c47a6b",
+  "i686-unknown-linux-gnu-0.15.17": "105dbbb8d898cb7ffb5f5464af3126d4be7dd1a1e58d802d482bb7a3b9712393",
+  "i686-unknown-linux-musl-0.15.17": "8803e601e51bb4e0fb6747272339394014d8447f231effb414e7937b9ea12888",
+  "powerpc64le-unknown-linux-gnu-0.15.17": "202fc52df8cc69d8ffdadc9bc4f68af987f9991bf153d676db3e116aa7f82e89",
+  "riscv64gc-unknown-linux-gnu-0.15.17": "cdd72afde5bbfc119fee54f215696db870aeb4893ae3c134c8dc83af3a69d9c0",
+  "s390x-unknown-linux-gnu-0.15.17": "f73297ab1ed5b1bb733a04ad4bc87a30b0a8c16843d7b0981b8b9e1a3495ea3f",
+  "x86_64-apple-darwin-0.15.17": "5522e517bd67ee8c2cb0d6a8298388d8edc8621a0bc5dc773f65e06c953693f6",
+  "x86_64-pc-windows-msvc-0.15.17": "08b6cb2bd20f3d19e3cf6e768d8d8105c8337de1c52e90c7dc1deea483d68c86",
+  "x86_64-unknown-linux-gnu-0.15.17": "7bca4641db4b0256d20f3a8c38057725e0982965639f5f9a0fb2f9aece4b7c4f",
+  "x86_64-unknown-linux-musl-0.15.17": "cbf85fc152b7fc25cb27f0233b325e9c72cb26965152050164e7608b72515189",
+  "aarch64-apple-darwin-0.15.16": "9deb6c4c38c9324bfd98ea4efb40946aae99a987e7f9d1308a1291f14f6b46e2",
+  "aarch64-pc-windows-msvc-0.15.16": "d2654d546fa03618e4ce39a568e78a0ccda71319928832266009b286f57354f8",
+  "aarch64-unknown-linux-gnu-0.15.16": "a39b83af7288da13c013a789af1a4f875562ba09fc8011a2825a4883cb3a97a9",
+  "aarch64-unknown-linux-musl-0.15.16": "3b39fc2608e12c554d42f6950a5ea131db8d8a0736c8949b3581c361f9f011d4",
+  "arm-unknown-linux-musleabihf-0.15.16": "30d04d1f068a443fe6a919a9f0a77a3e59deab515b6b60c07a678d94332d444b",
+  "armv7-unknown-linux-gnueabihf-0.15.16": "1f32fb51a347b70faa7d248ed524954736a79d3fd00887f79ee8c22004c8cca5",
+  "armv7-unknown-linux-musleabihf-0.15.16": "5d14928f26c14bb40c7ec0b9db1f7e05e6e6b21ffd499dafcd77d0575fa796d2",
+  "i686-pc-windows-msvc-0.15.16": "a68887cad08f7cf47e3753b1c84add837a64d9070102f43ec29d2a9fc8ed144a",
+  "i686-unknown-linux-gnu-0.15.16": "3afb75f98244d7aec2532b5140da8ec9f2f9422ae27d7ba42bd6f8b20d76547e",
+  "i686-unknown-linux-musl-0.15.16": "6fa9f045b0893456476836333410af37e52c32ecd511046d177802aeed42b2aa",
+  "powerpc64le-unknown-linux-gnu-0.15.16": "adeee21392ed843e1e30e64a1b238d844c00385ac983fbc231b786cfe5d3bee7",
+  "riscv64gc-unknown-linux-gnu-0.15.16": "e8e04a9d0664bd78e5164be9376091dbeefc455cdb684814a949dd7ebf5daa88",
+  "s390x-unknown-linux-gnu-0.15.16": "2bd5e6a045f19a593b269d362c07b4bcc68b57b73d2ada1eecf3618d0cde0237",
+  "x86_64-apple-darwin-0.15.16": "a8a7a60182f66b5995bd16e1831cf013e89558edf52135a1b6646f155f491f98",
+  "x86_64-pc-windows-msvc-0.15.16": "b6c843fa84afb37af9d665a418324782ae18ea3dd1de775abfd7cf17f9431f85",
+  "x86_64-unknown-linux-gnu-0.15.16": "b949a853b208b0f818a150fb06490487db585a15becaeda28483dd662939030a",
+  "x86_64-unknown-linux-musl-0.15.16": "f52d90f8a6b1b3ad7d74301c3c796652e851d8f05b6ba26d139f05f4838cf412",
+  "aarch64-apple-darwin-0.15.15": "2f7063e09d3c2af019b56f4fc6548199851e9387f359d696111af312adfe7619",
+  "aarch64-pc-windows-msvc-0.15.15": "801067abc7c499bda61ff7308a271f7b5258c1a9f90abb081d9ac099cee20720",
+  "aarch64-unknown-linux-gnu-0.15.15": "d334ae13383977fdaf754e6ea3d85c7b3ccbd510c713463eca73d0cd7151fe12",
+  "aarch64-unknown-linux-musl-0.15.15": "46ea2750c0f21dab01f853d55a521a5f388f8573dab698735effdc6a94c9b293",
+  "arm-unknown-linux-musleabihf-0.15.15": "daaf7d2b228c6b60ec30a3fefe37552d1b2ad50fc47d416dfbe04e80c78e4017",
+  "armv7-unknown-linux-gnueabihf-0.15.15": "752ed1eef8c0b3550c21e9682a4eb873dfe1e08e0c23ad59a1ff57212e2665b2",
+  "armv7-unknown-linux-musleabihf-0.15.15": "dda544c4890d46ec5d0b4a553087036ba9c50df6f566c54b38f8612185cd49c9",
+  "i686-pc-windows-msvc-0.15.15": "57abdd72d19a6dc81e1583b40fcc5c88584cbee4406e257c8002e4ab4f825429",
+  "i686-unknown-linux-gnu-0.15.15": "0c9ea8fa37a517cd833c8cdc26646ae2321d0f1f5f4359b00c3ae14b39c09f5b",
+  "i686-unknown-linux-musl-0.15.15": "37a77abef48e92d43755c268ae04cc395538f630a9f295de9d2afd401965551d",
+  "powerpc64le-unknown-linux-gnu-0.15.15": "ea7ba10a14ec3ef32275359cb8200775b6875f949352df3438f0c8de5b4ab514",
+  "riscv64gc-unknown-linux-gnu-0.15.15": "486c47b6441134b0f8e31cd4b5e12cc8d4501e5c19ea1d68523c60b7300d4344",
+  "s390x-unknown-linux-gnu-0.15.15": "d1834ddb58e5e73c6aa4c080bc3e1da4f4789150bb2d1d74824ff1bb52d5ddf9",
+  "x86_64-apple-darwin-0.15.15": "e43d7c03701c7a436e18da455baf29e4be3379fb70887c4dc65091dfa73c1747",
+  "x86_64-pc-windows-msvc-0.15.15": "c336db29a9e9234310212bc0d0bec1f722ec44f8a62c77b3f96a300282c6ff6d",
+  "x86_64-unknown-linux-gnu-0.15.15": "2c50f95a0f553731c87f8dc413465aa06059a0dc21dfe16786682db95ffeb9dc",
+  "x86_64-unknown-linux-musl-0.15.15": "c09b24fdec07d8ea73f7cbb32c38eb4f36f52298ac445dccf763171c898d8fc0",
+  "aarch64-apple-darwin-0.15.14": "953243859467ed3f4f2bc6c11e241cd42a11ed42605b33d971dc2b174772da7d",
+  "aarch64-pc-windows-msvc-0.15.14": "2f7a3fc221ca307c441306eb8f66740bfa129835a921862d124474080311933e",
+  "aarch64-unknown-linux-gnu-0.15.14": "9740a687b333e5e9b3764a9d09001268bd841c93140a0766ddceef53fd1ccd87",
+  "aarch64-unknown-linux-musl-0.15.14": "1693dfc1f402a81b32ff4fee5f8b494857a1a857a2b8d63cad88d9d39c201297",
+  "arm-unknown-linux-musleabihf-0.15.14": "3107f1e38cd07aad9567b1eba6fcce3d7f7af2c011dc665c9f733c650e92f1c7",
+  "armv7-unknown-linux-gnueabihf-0.15.14": "f198a9b46f860d1eba5fdd869fe12611f1828a564bd55b00a70cd8ade791717b",
+  "armv7-unknown-linux-musleabihf-0.15.14": "2cb7aa2aa1b3f0762e69a76d0e636f39d9a87f554c24a705c2b9c05b0bb824e0",
+  "i686-pc-windows-msvc-0.15.14": "c746d60bccd1a38e78893f683bb8b3043e1c6cd4ebe7fc4d7c11ead639808634",
+  "i686-unknown-linux-gnu-0.15.14": "34f99c35d9efbb4491f252ba565edc5051a879371829ee05b9f8b96432dff466",
+  "i686-unknown-linux-musl-0.15.14": "bb8b59953ccfb08a60c07666e07c1b830c4907ac8d0036bdef416ee614dd5fc7",
+  "powerpc64le-unknown-linux-gnu-0.15.14": "a25f2979686c99d47c1c4fb4a7676e015ac492682fdff7b05c078e253bd22c70",
+  "riscv64gc-unknown-linux-gnu-0.15.14": "757f852cfd037bae48186bbb78bf683197a21599d3c0f063c2f7d3be6f3a5d80",
+  "s390x-unknown-linux-gnu-0.15.14": "d8dcf7282d04eb44bb0717892605c46d9a26d35c641819cdef77b3a6b9b6213a",
+  "x86_64-apple-darwin-0.15.14": "537f569780fc71f63238f1f43dc04285b24fddbc6eea7219a9a18f408bdd869d",
+  "x86_64-pc-windows-msvc-0.15.14": "c589a77b0e112c374e9a5e0c42a7fb18d8725c5322ae261e343f66d1c87f0a5e",
+  "x86_64-unknown-linux-gnu-0.15.14": "e9fe1bb63fb8950cf8596d069f5c61b5a962bdd6c75edbdd2c8320871c40d6dd",
+  "x86_64-unknown-linux-musl-0.15.14": "e380c9cf14764b7134434c49d445d13c6e3db732cfd18d72c4bc2316a6dbb82e",
+  "aarch64-apple-darwin-0.15.13": "66ab3abeeba319266612e675dfbe0ca9c63f1e5f6ca3c6174482b0b088b8f6ff",
+  "aarch64-pc-windows-msvc-0.15.13": "b16d436afac64f8032831d2f7874fe5fa6b1b238bfae97924d2233904372deed",
+  "aarch64-unknown-linux-gnu-0.15.13": "8b8ee2a0f7e9ace1a734b2993ab2bfd68112d8a9c151ffa3025dbccaed4da52f",
+  "aarch64-unknown-linux-musl-0.15.13": "1084d8038eeb51f55c7b7c9779bb37e5f53b28b987767df61333e9d0da7b2701",
+  "arm-unknown-linux-musleabihf-0.15.13": "2b5b01e5e4ea6b72d75f20b7eac05305b29057e983c42839d62a7a5b9059867a",
+  "armv7-unknown-linux-gnueabihf-0.15.13": "e579f3068d8011dc8fb845e3939407facb2fb129a5bc31c7db216a5a0e9e15d6",
+  "armv7-unknown-linux-musleabihf-0.15.13": "d470b0fa4ba9cf94675dd8769f44bcdd16970fa6d8f48c34eb576299638a0742",
+  "i686-pc-windows-msvc-0.15.13": "418907ac98fed6d3a4011d9c3f4b6bc525d4572aa926368f7b37311bb163b15c",
+  "i686-unknown-linux-gnu-0.15.13": "8f7dc9bf2f7e1cbb6cbcb009d3759614085a32658271aff97eec6f51fa456eab",
+  "i686-unknown-linux-musl-0.15.13": "0ea01a5614197f7058af27fd067ae8a178f6d2e3ce3114bf22f74921289cd38a",
+  "powerpc64le-unknown-linux-gnu-0.15.13": "bd07a50f51069f130c8a66472260a6acc88a81735f92c40b5c735119f4155cc2",
+  "riscv64gc-unknown-linux-gnu-0.15.13": "e689a47ef17dd49c75d957b11f95b0bc102d8240817e209c0fea2907ea638a71",
+  "s390x-unknown-linux-gnu-0.15.13": "879a0888431b78fce4bd934d794921723d549c558021b8f7b3fb952be05abf53",
+  "x86_64-apple-darwin-0.15.13": "3ff692a61d5231ea6c94e6dafc575f87582a089d1281fac6b31cef2b4f2e4b6b",
+  "x86_64-pc-windows-msvc-0.15.13": "59892c6773df805effe7928e69796447585b42af54310cb6f1552536b746c39a",
+  "x86_64-unknown-linux-gnu-0.15.13": "fd09d74c60963714b9b0fbda226c669e85624e5a8488398b3e0d0b5ee7684dd1",
+  "x86_64-unknown-linux-musl-0.15.13": "66ac0b0582c8d24badc210b8e933e9aa0ad6707414e236409c9b9ad638972fb9",
+  "aarch64-apple-darwin-0.15.12": "bd59107e125f9c9f64a75be13b6ff21bf7cbc61c4b9529bbb75c8184e3dd6c3c",
+  "aarch64-pc-windows-msvc-0.15.12": "310a94d0c708691905d7614385732a2cbdede0979b93b81c01d55ab9de7ae754",
+  "aarch64-unknown-linux-gnu-0.15.12": "4dcd4cd8beb525d04294eeab67d84d199cce2c44b66858978ca729b694fe29ff",
+  "aarch64-unknown-linux-musl-0.15.12": "8996fe01814d00480c81da2b8ce9e8274f63eb07992318f082f7071772699635",
+  "arm-unknown-linux-musleabihf-0.15.12": "aca8dadd6bd0e7c2192bbe5cbb39efdd5bbca47460c0ef73e6102a8c858890c6",
+  "armv7-unknown-linux-gnueabihf-0.15.12": "3b8278e41d29ecac9f9ae07d95f8dc6707c45a28322503ea48d8c0cae53056b4",
+  "armv7-unknown-linux-musleabihf-0.15.12": "d60776dd376f82f8bbbf346e1fbb81ef844a6445068b0594e36102c1121f57e9",
+  "i686-pc-windows-msvc-0.15.12": "a466127b868dc22095dc717856cc94f283a01ccffa3a9814d35b5d42661e73be",
+  "i686-unknown-linux-gnu-0.15.12": "64c4c076d6cc45f65b058bf5e2c3dd3150f80964a5a47f76c4245cdaa40ff7bb",
+  "i686-unknown-linux-musl-0.15.12": "44462b0989328e7f7bbf4396e6d18152909ffeb43f49991e5b2f9fb28738af6d",
+  "powerpc64le-unknown-linux-gnu-0.15.12": "36d42837ce7526663c707572c91615f4b1457c5d22f6ec4f96ea8921f83cc38d",
+  "riscv64gc-unknown-linux-gnu-0.15.12": "69e5f9d477ea238f7fd00c2ac39ea78a3d7c7369124f62620a8c8a6b195d4f3a",
+  "s390x-unknown-linux-gnu-0.15.12": "a612eaae54928a170403de322ab659d82fc233a3d1bb0337c8c39b48e9e5b41f",
+  "x86_64-apple-darwin-0.15.12": "f88b6ad8338ad7acf83497e4bc2f2b5d3cac46c3e71363b7263c1bb9027c9b37",
+  "x86_64-pc-windows-msvc-0.15.12": "d378033392042377491ef2541457af47cc4652c4e984639c95413b0c4876b0f1",
+  "x86_64-unknown-linux-gnu-0.15.12": "5e26a7811f7db364864ace00cced53003556a37b63f3c987e340b18207776f1c",
+  "x86_64-unknown-linux-musl-0.15.12": "e0b074f722f87efe2e09de3a77820a012d1417ebabbd308cccdf6b98ba8d4bb3",
+  "aarch64-apple-darwin-0.15.11": "89cd4370b5c5d7ab01f436bd5d878293c9858e4e964a3da3013c49549198dc8b",
+  "aarch64-pc-windows-msvc-0.15.11": "35ee4e8f0e784100aa1f3325705f2a764319d673fbeb8ba74ce169d4da13a675",
+  "aarch64-unknown-linux-gnu-0.15.11": "6c7004eb732951ecce2059b3d5ef93010f8410ececaf96c24dbac41155780eee",
+  "aarch64-unknown-linux-musl-0.15.11": "4d196496a51d4bbefc4a2a65049364c920b470afd320befa20516e59d1c065e2",
+  "arm-unknown-linux-musleabihf-0.15.11": "caf1d8a5fbeb85389f9aa354bb9e5444f8d16ce7c6e5483681ef83ec6f9f7aa5",
+  "armv7-unknown-linux-gnueabihf-0.15.11": "c8733ca5191f6503853a1f908e005ce9f2984ed58623f7544c56c28ce5d737db",
+  "armv7-unknown-linux-musleabihf-0.15.11": "758d7fa7f7258dce3074a17432d6425bd6eec3be0a0558bf46729bbcf011cae7",
+  "i686-pc-windows-msvc-0.15.11": "4af40e2bd1c6044ab1e0cb94ed836773237a4d88697a72c0babb16aede6e352f",
+  "i686-unknown-linux-gnu-0.15.11": "db2c037d01bef8a5bc790f10fb7bfe82d97d287b5cda88acdd3a8d0bfcf20069",
+  "i686-unknown-linux-musl-0.15.11": "c0c8456deb03520b4c8cea4f7dcd6e1fbaaa810a751b031fa79db09c41eae800",
+  "powerpc64le-unknown-linux-gnu-0.15.11": "d68248684191d453897040fe5aab170a5bea7298fdaf0796f6eafa17d820e3cf",
+  "riscv64gc-unknown-linux-gnu-0.15.11": "33beb06489d7b4b8295c0a696ef2125afe6f31e8e9355ae61bff6aa46b118702",
+  "s390x-unknown-linux-gnu-0.15.11": "8b20efbb2a004fa27be6fda2c821a82d55cfaae5a0878ad210a12d976e3f0b60",
+  "x86_64-apple-darwin-0.15.11": "c6f2c36fc5f3d14ffc2db1e205aa69756de485771f39848afe848c16b8a1a648",
+  "x86_64-pc-windows-msvc-0.15.11": "d1f76eac07c279aafc594d9ba4c6f658f7cb433002aeeadbe2959229fc368881",
+  "x86_64-unknown-linux-gnu-0.15.11": "8018f4c746c98e3a4128295c5da294d8b04c2bb14e1868e2da6fd02faf93ebe4",
+  "x86_64-unknown-linux-musl-0.15.11": "ea286f17b66054a3aac2672158b9ac194030d89043ff108357edd9b20123219a",
+  "aarch64-apple-darwin-0.15.10": "77c1df502dcfaaec52c6ce203b504b8554c88ab66ac01313410fa68ad9aafd5b",
+  "aarch64-pc-windows-msvc-0.15.10": "1776bf104277b3fbb3b3e4b481655f492f6df10210e2e00cd94132e66e999bd4",
+  "aarch64-unknown-linux-gnu-0.15.10": "b775a5a09484549ac3fd377b5ce34955cf633165169671d1c4a215c113ce15df",
+  "aarch64-unknown-linux-musl-0.15.10": "84754f0e58f58fb123ea49b8d22b8ce2cc96e4046b7c1b1ed99f6af7fe76f8ef",
+  "arm-unknown-linux-musleabihf-0.15.10": "e94eb3061a263217fad7219a0b20e5a746a31f44387cd21c31eb5103357dbb8c",
+  "armv7-unknown-linux-gnueabihf-0.15.10": "7a348dd60f4c5563482504acabba49def8a8cd5d957b6e145a1dbdef7cdf0663",
+  "armv7-unknown-linux-musleabihf-0.15.10": "8c85562d2ed09bc4edbbea151aec386e8f7e9f5499e6c5d0324fd26fe7c5dc8a",
+  "i686-pc-windows-msvc-0.15.10": "a8b4132914f197d1fef5f48fd7f0f8e840546a814daf9f680109344407da79ac",
+  "i686-unknown-linux-gnu-0.15.10": "6f9b23d07d90ef3ac148c8b81fc8ea37647f1241e4db18be1b0a24df43d479f8",
+  "i686-unknown-linux-musl-0.15.10": "63d80b9427a8299c8bf08d34621e187fe5fe5f696f36b54635e00248d3ca7e5f",
+  "powerpc64le-unknown-linux-gnu-0.15.10": "49cfcb83828844f61e00c643dd81182a015140b9bf58cee5b115f705e99749e6",
+  "riscv64gc-unknown-linux-gnu-0.15.10": "8d7eeef9d9abd9e88b92d9420021be5fbd1dbd60e10ef7f989060213cd68c4c7",
+  "s390x-unknown-linux-gnu-0.15.10": "80056787672af7b4e9217afdd666a8c19eebbe5eb2fe626a6a9a779ea6778a1b",
+  "x86_64-apple-darwin-0.15.10": "7210e06196de876771cc0bad0f1d57678e709d039f184b491fdaa600d6a95a5e",
+  "x86_64-pc-windows-msvc-0.15.10": "6f8f9a445102107ee3c0a05c8f386bacb32238199ecbc0983b9b06c5ea3d7c5e",
+  "x86_64-unknown-linux-gnu-0.15.10": "e3e9e5c791542f00d95edc74a506e1ac24efc0af9574de01ab338187bf1ff9f6",
+  "x86_64-unknown-linux-musl-0.15.10": "8b0a16bae81e371c9b6176a27fdb9db1deaa04c4cfe87e8604a898cc31686500",
+  "aarch64-apple-darwin-0.15.9": "013d878f17c625550e4a6b19235c22fc229639f66f563bb72cb2c896aeca11e8",
+  "aarch64-pc-windows-msvc-0.15.9": "813c3b9cf0c01ef913bfbc8d2dd17e140a8c3d54ae1b8f8c20ac53e2871674f0",
+  "aarch64-unknown-linux-gnu-0.15.9": "ea71b14433318bed364e0dbb04203e57027cf134ab909d5e452be28d87d0fd08",
+  "aarch64-unknown-linux-musl-0.15.9": "e017dd0c1fd7475aaddc49bde8cddcee3c27d42f6ce139a96df0c1022e06d85b",
+  "arm-unknown-linux-musleabihf-0.15.9": "593382b4b5271cf63b8ea9972c7475a299f341ce8a9c22127ce1f8b7d82fcfe1",
+  "armv7-unknown-linux-gnueabihf-0.15.9": "3c12ad897c62954fdc6a5c0f7baddd06f1cb37f1987618fa243ebd00a7b67d86",
+  "armv7-unknown-linux-musleabihf-0.15.9": "9d9ebfe0075c7a6411f771ba79e210a3dffc4ba9706b542c5db72dc39d922893",
+  "i686-pc-windows-msvc-0.15.9": "46cdcacb4522e19a26a18d586abb6addc68b4254bea958e93a347d7566add1c3",
+  "i686-unknown-linux-gnu-0.15.9": "c04ddaa542d36b0483e325d29b00520242cf6b4e78e4cea0b73f0c74c77459ef",
+  "i686-unknown-linux-musl-0.15.9": "97145060b15819b7d31df7c3fd160b02397e89c40069d485915ce6fbe92cb769",
+  "powerpc64le-unknown-linux-gnu-0.15.9": "56e522a316427281d590aff0bcece176aedb15e9329799c1ada5cd8fd5e17b71",
+  "riscv64gc-unknown-linux-gnu-0.15.9": "e0499cfd557515133118cc4dafb65a805c9656833a66b2fddaee9a9f8e847de4",
+  "s390x-unknown-linux-gnu-0.15.9": "7402b9bdb1aaa79387f5b702696ec75d9ebed26f0a8e5097fc58924418c92097",
+  "x86_64-apple-darwin-0.15.9": "7e0fe9daba25848f85cb3d43e47ecd7d23f14e92e8799f92c1bcd8319a4ce4f8",
+  "x86_64-pc-windows-msvc-0.15.9": "e38fddd19805bc8f7329003c2abdaf49d8ca9e5bc0c6702e8472e16f127bcd44",
+  "x86_64-unknown-linux-gnu-0.15.9": "223ce40fbea2245b0a650abf9f5093a6009b56a04e5e63c036f446cab328dcf7",
+  "x86_64-unknown-linux-musl-0.15.9": "e30e6e50dbf925b42335f28e2fa296d404294f294159b314dca47b88317fc477",
   "aarch64-apple-darwin-0.15.8": "94fc061f928c8f2b04c4b3a98aad2b1b04f38b4c808839bc5b33a2f0a63a47a3",
   "aarch64-pc-windows-msvc-0.15.8": "5e2941bff2f14fa9b48532bba67d1bbeec2c26d5fecc5a4bc0f76d813ad644dc",
   "aarch64-unknown-linux-gnu-0.15.8": "7df2a2c86f1017936d8ce7b74d451ed05f2c648af8cf89add7ac0e4f3635f386",
@@ -29426,28 +30096,22 @@ var KNOWN_CHECKSUMS = {
   "x86_64-unknown-linux-musl-0.0.247": "d14f59b09a83e3bdba4a54687158534f7c8ae702f8df770b8eaabf4445fb8b60"
 };
 
+// src/download/checksum/known-checksums.ts
+var KNOWN_CHECKSUMS = known_checksums_default;
+
 // src/download/checksum/update-known-checksums.ts
 async function updateChecksums(filePath, downloadUrls) {
-  await import_node_fs.promises.rm(filePath);
-  await import_node_fs.promises.appendFile(
-    filePath,
-    "// AUTOGENERATED_DO_NOT_EDIT\nexport const KNOWN_CHECKSUMS: { [key: string]: string } = {\n"
-  );
-  let firstLine = true;
+  const checksums = {};
   for (const downloadUrl of downloadUrls) {
     const key = getKey(downloadUrl);
     if (key === void 0) {
       continue;
     }
     const checksum = await getOrDownloadChecksum(key, downloadUrl);
-    if (!firstLine) {
-      await import_node_fs.promises.appendFile(filePath, ",\n");
-    }
-    await import_node_fs.promises.appendFile(filePath, `  "${key}":
-    "${checksum}"`);
-    firstLine = false;
+    checksums[key] = checksum;
   }
-  await import_node_fs.promises.appendFile(filePath, ",\n};\n");
+  await import_node_fs.promises.writeFile(filePath, `${JSON.stringify(checksums, null, 2)}
+`);
 }
 function getKey(downloadUrl) {
   const parts = downloadUrl.split("/");
@@ -29507,4 +30171,18 @@ undici/lib/web/fetch/body.js:
 
 undici/lib/web/websocket/frame.js:
   (*! ws. MIT License. Einar Otto Stangvik <einaros@gmail.com> *)
+
+content-type/dist/index.js:
+  (*!
+   * content-type
+   * Copyright(c) 2015 Douglas Christopher Wilson
+   * MIT Licensed
+   *)
+
+@octokit/request-error/dist-src/index.js:
+  (* v8 ignore else -- @preserve -- Bug with vitest coverage where it sees an else branch that doesn't exist *)
+
+@octokit/request/dist-bundle/index.js:
+  (* v8 ignore next -- @preserve *)
+  (* v8 ignore else -- @preserve *)
 */

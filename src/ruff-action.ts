@@ -4,13 +4,14 @@ import * as exec from "@actions/exec";
 import * as semver from "semver";
 import {
   downloadVersion,
-  resolveVersion,
   tryGetFromToolCache,
 } from "./download/download-version";
 import {
   args,
   checkSum,
+  downloadFromAstralMirror,
   githubToken,
+  manifestFile,
   src,
   version,
   versionFile as versionFileInput,
@@ -21,8 +22,12 @@ import {
   getPlatform,
   type Platform,
 } from "./utils/platforms";
-import { getRuffVersionFromRequirementsFile } from "./utils/pyproject";
-import { findPyprojectToml } from "./utils/pyproject-finder";
+import {
+  expandSourceInput,
+  getVersionSourceDirectory,
+  splitInput,
+} from "./utils/source-input";
+import { resolveRuffVersion } from "./version/resolve";
 
 async function run(): Promise<void> {
   const platform = getPlatform();
@@ -35,7 +40,13 @@ async function run(): Promise<void> {
     if (arch === undefined) {
       throw new Error(`Unsupported architecture: ${process.arch}`);
     }
-    const setupResult = await setupRuff(platform, arch, checkSum, githubToken);
+    const setupResult = await setupRuff(
+      platform,
+      arch,
+      checkSum,
+      githubToken,
+      downloadFromAstralMirror,
+    );
 
     addRuffToPath(setupResult.ruffDir);
     setOutputFormat();
@@ -43,11 +54,7 @@ async function run(): Promise<void> {
     core.setOutput("ruff-version", setupResult.version);
     core.info(`Successfully installed ruff version ${setupResult.version}`);
 
-    await runRuff(
-      path.join(setupResult.ruffDir, "ruff"),
-      args.split(" "),
-      src.split(" "),
-    );
+    await runRuff(path.join(setupResult.ruffDir, "ruff"), args, src);
 
     process.exit(0);
   } catch (err) {
@@ -60,8 +67,10 @@ async function setupRuff(
   arch: Architecture,
   checkSum: string | undefined,
   githubToken: string,
+  downloadFromAstralMirror: boolean,
 ): Promise<{ ruffDir: string; version: string }> {
   const resolvedVersion = await determineVersion();
+  const manifestUrl = manifestFile || undefined;
   if (semver.lt(resolvedVersion, "v0.0.247")) {
     throw Error(
       "This action does not support ruff versions older than 0.0.247",
@@ -82,6 +91,8 @@ async function setupRuff(
     resolvedVersion,
     checkSum,
     githubToken,
+    manifestUrl,
+    downloadFromAstralMirror,
   );
 
   return {
@@ -91,38 +102,17 @@ async function setupRuff(
 }
 
 async function determineVersion(): Promise<string> {
-  if (versionFileInput !== "" && version !== "") {
-    throw Error("It is not allowed to specify both version and version-file");
-  }
-  if (version !== "") {
-    return await resolveVersion(version, githubToken);
-  }
-  if (versionFileInput !== "") {
-    const versionFromPyproject =
-      getRuffVersionFromRequirementsFile(versionFileInput);
-    if (versionFromPyproject === undefined) {
-      core.warning(
-        `Could not parse version from ${versionFileInput}. Using latest version.`,
-      );
-    }
-    return await resolveVersion(versionFromPyproject || "latest", githubToken);
-  }
-  const pyProjectPath = findPyprojectToml(
-    src,
-    process.env.GITHUB_WORKSPACE || ".",
-  );
-  if (!pyProjectPath) {
-    core.info(`Could not find pyproject.toml. Using latest version.`);
-    return await resolveVersion("latest", githubToken);
-  }
-  const versionFromPyproject =
-    getRuffVersionFromRequirementsFile(pyProjectPath);
-  if (versionFromPyproject === undefined) {
-    core.info(
-      `Could not parse version from ${pyProjectPath}. Using latest version.`,
-    );
-  }
-  return await resolveVersion(versionFromPyproject || "latest", githubToken);
+  return await resolveRuffVersion({
+    manifestFile: manifestFile || undefined,
+    sourceDirectory: await getVersionSourceDirectory(
+      src,
+      version,
+      versionFileInput,
+    ),
+    version,
+    versionFile: versionFileInput,
+    workspaceRoot: process.env.GITHUB_WORKSPACE || ".",
+  });
 }
 
 function addRuffToPath(cachedPath: string): void {
@@ -149,10 +139,10 @@ function getActionRoot(): string {
 
 async function runRuff(
   ruffExecutablePath: string,
-  args: string[],
-  src: string[],
+  args: string,
+  src: string,
 ): Promise<void> {
-  const execArgs = [...args, ...src];
+  const execArgs = [...splitInput(args), ...(await expandSourceInput(src))];
   await exec.exec(ruffExecutablePath, execArgs);
 }
 

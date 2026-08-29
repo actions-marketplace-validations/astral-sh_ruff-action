@@ -2,16 +2,16 @@ import { promises as fs } from "node:fs";
 import * as path from "node:path";
 import * as core from "@actions/core";
 import * as tc from "@actions/tool-cache";
-import { Octokit } from "@octokit/core";
-import { paginateRest } from "@octokit/plugin-paginate-rest";
-import { restEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";
-import * as pep440 from "@renovatebot/pep440";
 import * as semver from "semver";
-import { OWNER, REPO, TOOL_CACHE_NAME } from "../utils/constants";
+import {
+  ASTRAL_MIRROR_PREFIX,
+  GITHUB_RELEASES_PREFIX,
+  TOOL_CACHE_NAME,
+  VERSIONS_MANIFEST_URL,
+} from "../utils/constants";
 import type { Architecture, Platform } from "../utils/platforms";
 import { validateChecksum } from "./checksum/checksum";
-
-const PaginatingOctokit = Octokit.plugin(paginateRest, restEndpointMethods);
+import { getArtifact } from "./manifest";
 
 export function tryGetFromToolCache(
   arch: Architecture,
@@ -32,31 +32,48 @@ export async function downloadVersion(
   platform: Platform,
   arch: Architecture,
   version: string,
-  checkSum: string | undefined,
+  checksum: string | undefined,
   githubToken: string,
+  manifestUrl?: string,
+  downloadFromAstralMirror = true,
 ): Promise<{ version: string; cachedToolDir: string }> {
-  const artifact = `ruff-${arch}-${platform}`;
-  let extension = ".tar.gz";
-  if (platform === "pc-windows-msvc") {
-    extension = ".zip";
-  }
-  const downloadUrl = constructDownloadUrl(version, platform, arch);
-  core.debug(`Downloading ruff from "${downloadUrl}" ...`);
+  const artifact = await getArtifact(version, arch, platform, manifestUrl);
 
-  const downloadPath = await tc.downloadTool(
-    downloadUrl,
-    undefined,
-    githubToken,
+  if (!artifact) {
+    throw new Error(
+      getMissingArtifactMessage(version, arch, platform, manifestUrl),
+    );
+  }
+
+  // For the default astral-sh/versions source, checksum validation relies on
+  // user input or the built-in KNOWN_CHECKSUMS table, not manifest sha256 values.
+  const resolvedChecksum =
+    manifestUrl === undefined
+      ? checksum
+      : resolveChecksum(checksum, artifact.checksum);
+
+  const downloadPath = await downloadArtifact(
+    artifact.downloadUrl,
+    platform,
+    arch,
+    version,
+    getDownloadToken(artifact.downloadUrl, githubToken),
+    downloadFromAstralMirror,
   );
-  core.debug(`Downloaded ruff to "${downloadPath}"`);
-  await validateChecksum(checkSum, downloadPath, arch, platform, version);
+  await validateChecksum(
+    resolvedChecksum,
+    downloadPath,
+    arch,
+    platform,
+    version,
+  );
 
   const extractedDir = await extractDownloadedArtifact(
     version,
     downloadPath,
-    extension,
+    getExtension(platform),
     platform,
-    artifact,
+    `ruff-${arch}-${platform}`,
   );
 
   const cachedToolDir = await tc.cacheDir(
@@ -65,25 +82,67 @@ export async function downloadVersion(
     version,
     arch,
   );
-  return { cachedToolDir, version: version };
+  return { cachedToolDir, version };
 }
 
-function constructDownloadUrl(
-  version: string,
+/**
+ * Rewrite a GitHub Releases URL to the Astral mirror.
+ * Returns `undefined` if the URL does not match the expected GitHub prefix.
+ */
+export function rewriteToMirror(url: string): string | undefined {
+  if (!url.startsWith(GITHUB_RELEASES_PREFIX)) {
+    return undefined;
+  }
+
+  return ASTRAL_MIRROR_PREFIX + url.slice(GITHUB_RELEASES_PREFIX.length);
+}
+
+async function downloadArtifact(
+  downloadUrl: string,
   platform: Platform,
   arch: Architecture,
-): string {
-  const artifactVersionSuffix =
-    semver.lte(version, "v0.4.10") && semver.gte(version, "v0.1.8")
-      ? `-${version}`
-      : "";
-  const artifact = `ruff${artifactVersionSuffix}-${arch}-${platform}`;
-  let extension = ".tar.gz";
-  if (platform === "pc-windows-msvc") {
-    extension = ".zip";
+  version: string,
+  githubToken: string | undefined,
+  downloadFromAstralMirror: boolean,
+): Promise<string> {
+  const mirrorUrl = downloadFromAstralMirror
+    ? rewriteToMirror(downloadUrl)
+    : undefined;
+  const resolvedDownloadUrl = mirrorUrl ?? downloadUrl;
+
+  try {
+    return await downloadFile(
+      resolvedDownloadUrl,
+      mirrorUrl !== undefined ? undefined : githubToken,
+    );
+  } catch (err) {
+    if (mirrorUrl === undefined) {
+      throw err;
+    }
+
+    core.warning(
+      `Failed to download from mirror, falling back to GitHub Releases: ${(err as Error).message}`,
+    );
+
+    return await downloadFile(
+      constructDownloadUrl(version, platform, arch),
+      githubToken,
+    );
   }
-  const versionPrefix = semver.lte(version, "v0.4.10") ? "v" : "";
-  return `https://github.com/${OWNER}/${REPO}/releases/download/${versionPrefix}${version}/${artifact}${extension}`;
+}
+
+async function downloadFile(
+  downloadUrl: string,
+  githubToken: string | undefined,
+): Promise<string> {
+  core.info(`Downloading ruff from "${downloadUrl}" ...`);
+  const downloadPath = await tc.downloadTool(
+    downloadUrl,
+    undefined,
+    githubToken,
+  );
+  core.debug(`Downloaded ruff to "${downloadPath}"`);
+  return downloadPath;
 }
 
 async function extractDownloadedArtifact(
@@ -98,7 +157,7 @@ async function extractDownloadedArtifact(
     const fullPathWithExtension = `${downloadPath}${extension}`;
     await fs.copyFile(downloadPath, fullPathWithExtension);
     ruffDir = await tc.extractZip(fullPathWithExtension);
-    // On windows extracting the zip does not create an intermediate directory
+    // On windows extracting the zip does not create an intermediate directory.
   } else {
     ruffDir = await tc.extractTar(downloadPath);
     if (semver.gte(version, "v0.5.0")) {
@@ -111,116 +170,57 @@ async function extractDownloadedArtifact(
   return ruffDir;
 }
 
-export async function resolveVersion(
-  versionInput: string,
-  githubToken: string,
-): Promise<string> {
-  core.debug(`Resolving ${versionInput}...`);
-  const version =
-    versionInput === "latest"
-      ? await getLatestVersion(githubToken)
-      : versionInput;
-  if (tc.isExplicitVersion(version)) {
-    core.debug(`Version ${version} is an explicit version.`);
-    return version;
-  }
-  const availableVersions = await getAvailableVersions(githubToken);
-  const resolvedVersion = maxSatisfying(availableVersions, version);
-  if (resolvedVersion === undefined) {
-    throw new Error(`No version found for ${version}`);
-  }
-  core.debug(`Resolved version: ${resolvedVersion}`);
-  return resolvedVersion;
-}
-
-async function getAvailableVersions(githubToken: string): Promise<string[]> {
-  try {
-    const octokit = new PaginatingOctokit({
-      auth: githubToken,
-    });
-    return await getReleaseTagNames(octokit);
-  } catch (err) {
-    if ((err as Error).message.includes("Bad credentials")) {
-      core.info(
-        "No (valid) GitHub token provided. Falling back to anonymous. Requests might be rate limited.",
-      );
-      const octokit = new PaginatingOctokit();
-      return await getReleaseTagNames(octokit);
-    }
-    throw err;
-  }
-}
-
-async function getReleaseTagNames(
-  octokit: InstanceType<typeof PaginatingOctokit>,
-): Promise<string[]> {
-  const response = await octokit.paginate(octokit.rest.repos.listReleases, {
-    owner: OWNER,
-    repo: REPO,
-  });
-  const releaseTagNames = response.map((release) => release.tag_name);
-  if (releaseTagNames.length === 0) {
-    throw Error(
-      "Github API request failed while getting releases. Check the GitHub status page for outages. Try again later.",
-    );
-  }
-  return response.map((release) => release.tag_name);
-}
-
-async function getLatestVersion(githubToken: string) {
-  const octokit = new PaginatingOctokit({
-    auth: githubToken,
-  });
-
-  let latestRelease: { tag_name: string } | undefined;
-  try {
-    latestRelease = await getLatestRelease(octokit);
-  } catch (err) {
-    if ((err as Error).message.includes("Bad credentials")) {
-      core.info(
-        "No (valid) GitHub token provided. Falling back to anonymous. Requests might be rate limited.",
-      );
-      const octokit = new PaginatingOctokit();
-      latestRelease = await getLatestRelease(octokit);
-    } else {
-      core.error(
-        "Github API request failed while getting latest release. Check the GitHub status page for outages. Try again later.",
-      );
-      throw err;
-    }
-  }
-
-  if (!latestRelease) {
-    throw new Error("Could not determine latest release.");
-  }
-  return latestRelease.tag_name;
-}
-
-async function getLatestRelease(
-  octokit: InstanceType<typeof PaginatingOctokit>,
-) {
-  const { data: latestRelease } = await octokit.rest.repos.getLatestRelease({
-    owner: OWNER,
-    repo: REPO,
-  });
-  return latestRelease;
-}
-
-function maxSatisfying(
-  versions: string[],
+function getMissingArtifactMessage(
   version: string,
+  arch: Architecture,
+  platform: Platform,
+  manifestUrl?: string,
+): string {
+  if (manifestUrl === undefined) {
+    return `Could not find artifact for version ${version}, arch ${arch}, platform ${platform} in ${VERSIONS_MANIFEST_URL} .`;
+  }
+
+  return `manifest-file does not contain version ${version}, arch ${arch}, platform ${platform}.`;
+}
+
+function resolveChecksum(
+  checksum: string | undefined,
+  manifestChecksum: string,
+): string {
+  return checksum !== undefined && checksum !== ""
+    ? checksum
+    : manifestChecksum;
+}
+
+function getDownloadToken(
+  downloadUrl: string,
+  githubToken: string,
 ): string | undefined {
-  const maxSemver = tc.evaluateVersions(versions, version);
-  if (maxSemver !== "") {
-    core.debug(`Found a version that satisfies the semver range: ${maxSemver}`);
-    return maxSemver;
-  }
-  const maxPep440 = pep440.maxSatisfying(versions, version);
-  if (maxPep440 !== null) {
-    core.debug(
-      `Found a version that satisfies the pep440 specifier: ${maxPep440}`,
-    );
-    return maxPep440;
-  }
-  return undefined;
+  return downloadUrl.startsWith(GITHUB_RELEASES_PREFIX)
+    ? githubToken
+    : undefined;
+}
+
+function constructDownloadUrl(
+  version: string,
+  platform: Platform,
+  arch: Architecture,
+): string {
+  const normalizedVersion = stripVersionPrefix(version);
+  const artifactVersionSuffix =
+    semver.lte(version, "v0.4.10") && semver.gte(version, "v0.1.8")
+      ? `-${normalizedVersion}`
+      : "";
+  const artifact = `ruff${artifactVersionSuffix}-${arch}-${platform}`;
+  const versionPrefix = semver.lte(version, "v0.4.10") ? "v" : "";
+
+  return `${GITHUB_RELEASES_PREFIX}${versionPrefix}${normalizedVersion}/${artifact}${getExtension(platform)}`;
+}
+
+function stripVersionPrefix(version: string): string {
+  return version.startsWith("v") ? version.slice(1) : version;
+}
+
+function getExtension(platform: Platform): string {
+  return platform === "pc-windows-msvc" ? ".zip" : ".tar.gz";
 }
